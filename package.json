@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "npm run build && node dist/start.js"
   },
   "author": "r32a",
   "license": "MIT",
@@ -15,6 +17,11 @@
     "grenache-nodejs-http": "^0.7.12",
     "grenache-nodejs-link": "^0.7.12",
     "lodash": "^4.17.21",
-    "mongodb": "^4.2.2"
+    "mongodb": "^4.13.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.191",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.4"
   }
 }

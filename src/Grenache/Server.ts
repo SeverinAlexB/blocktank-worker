@@ -4,7 +4,7 @@ const Link = require('grenache-nodejs-link')
 const { PeerRPCServer } = require('grenache-nodejs-http')
 
 
-export default function GrenacheServerFactory (config: GrapeServerConfig) {
+export function GrenacheServerFactory (config: GrapeServerConfig) {
     if (config.test_env) return
     const link = new Link({
       grape: config.grape || 'http://127.0.0.1:30001'

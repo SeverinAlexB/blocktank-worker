@@ -1,15 +1,20 @@
 'use strict'
 import { get } from 'lodash'
 import  { EventEmitter } from 'events'
-import GrenacheServerFactory from './Grenache/Server'
-import GrenacheClient from './Grenache/Client'
-const Db = require('./DB/DB')
+import {GrenacheServerFactory} from './Grenache/Server'
+import {GrenacheClient} from './Grenache/Client'
+import { MongoDatabase } from './DB/DB'
+import { GrapeServerConfig } from './Grenache/GrapeServerConfig'
+
+
+
 
 class Controller extends EventEmitter {
-  constructor (config) {
+  private gClient: GrenacheClient;
+  private gServer: any;
+  constructor (public config: GrapeServerConfig) {
     super()
-    console.log('Starting Worker: ' + config.name)
-    this.worker_name = config.name
+    console.log('Starting Worker: ' + this.workerName)
     this.gClient = new GrenacheClient(config)
     this.gServer = GrenacheServerFactory(config)
 
@@ -47,6 +52,7 @@ class Controller extends EventEmitter {
       })
     }
 
+
     this._sync_fn_running = new Map()
     this._sync_fn_main = new Map()
 
@@ -71,6 +77,11 @@ class Controller extends EventEmitter {
         this._sync_fn_main.set(n, this[n].bind(this))
         this[n] = syncFnRunner.bind(this)
       })
+  }
+
+
+  get workerName(): string {
+      return this.config.name;
   }
 
   callWorker (name, method, args, cb) {

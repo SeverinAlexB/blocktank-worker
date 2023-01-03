@@ -1,3 +1,4 @@
+import { BlocktankCallback } from "../callback";
 import { GrapeServerConfig } from "./GrapeServerConfig"
 
 const Link = require('grenache-nodejs-link')
@@ -27,7 +28,7 @@ export class GrenacheClient {
   // @name: Name of the worker
   // @params.method: Method of the worker
   // @params.args: arguments passed to the worker
-  send(name: string, params: ServerCallParams, callback?: any): Promise<any> {
+  send(name: string, params: ServerCallParams, callback?: BlocktankCallback): Promise<any> {
     return new Promise((resolve, reject) => {
       this.peer.request(name, params, { timeout: 600000 }, (err: any, data: any) => {
         if (err && err.message.includes('ERR_GRAPE_LOOKUP_EMPTY')) {

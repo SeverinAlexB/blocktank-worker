@@ -1,8 +1,8 @@
 'use strict'
-const { get } = require('lodash')
-const { EventEmitter } = require('events')
-const GrenacheServer = require('./Grenache/Server')
-const GrenacheClient = require('./Grenache/Client')
+import { get } from 'lodash'
+import  { EventEmitter } from 'events'
+import GrenacheServerFactory from './Grenache/Server'
+import GrenacheClient from './Grenache/Client'
 const Db = require('./DB/DB')
 
 class Controller extends EventEmitter {
@@ -11,7 +11,7 @@ class Controller extends EventEmitter {
     console.log('Starting Worker: ' + config.name)
     this.worker_name = config.name
     this.gClient = new GrenacheClient(config)
-    this.gServer = GrenacheServer(config)
+    this.gServer = GrenacheServerFactory(config)
 
     if (config.modules) {
       this._loadModules(config.modules)

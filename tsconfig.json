@@ -9,6 +9,7 @@
       "allowJs": true,
       "moduleResolution": "node",
       "declaration": true,
+      "removeComments": true
     },
     "include": ["./src/**/*"],
     "exclude": ["node_modules"]

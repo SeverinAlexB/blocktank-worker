@@ -1,7 +1,20 @@
 'use strict'
 const { default: axios } = require('axios')
 
-async function callAPI (ip, token) {
+
+export interface IpInfoResponse {
+  ip: string,
+  hostname: string,
+  city: string,
+  region: string,
+  country: string,
+  loc: string,
+  org: string,
+  postal: string,
+  timezone: string,
+}
+
+async function callAPI(ip: string, token: string): Promise<IpInfoResponse> {
   try {
     const res = await axios.get(`https://ipinfo.io/${ip}?token=${token}`)
     return res.data
@@ -14,7 +27,7 @@ async function callAPI (ip, token) {
 
 module.exports = {
   namespace: 'geoip',
-  getIpInfo: async (ip, token) => {
+  getIpInfo: async (ip: string, token: string): Promise<IpInfoResponse> => {
     const end = ip.includes(':') ? ip.indexOf(':') : ip.length
     const formatted = ip.substr(0, end)
     return callAPI(formatted, token)

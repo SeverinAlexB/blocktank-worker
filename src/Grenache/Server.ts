@@ -17,8 +17,9 @@ export function GrenacheServerFactory (config: GrapeServerConfig) {
     peer.init()
     const service = peer.transport('server')
     service.listen(config.port || 8999)
-    setInterval(function () {
-      link.announce(config.name, service.port, {})
-    }, 3000)
+    link.announce(config.name, service.port, {})
+    // setInterval(function () {
+      
+    // }, 3000)
     return service
 }

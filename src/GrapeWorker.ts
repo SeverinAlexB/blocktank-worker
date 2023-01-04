@@ -1,17 +1,17 @@
 import { get } from 'lodash'
 import  { EventEmitter } from 'events'
-import {GrenacheServerFactory} from './Grenache/Server'
-import {GrenacheClient} from './Grenache/Client'
-import { MongoDatabase } from './DB/DB'
-import { GrapeServerConfig } from './Grenache/GrapeServerConfig'
-import { IDatabaseModel } from './DB/DatabaseModel'
-import { SyncRunner } from './Utils/SyncRunner'
-import { ServerCallRequest } from './Grenache/SeverCallRequest'
+import {GrenacheServerFactory} from './grenache/Server'
+import {GrenacheClient} from './grenache/Client'
+import { MongoDatabase } from './db/MongoDatabase'
+import { GrapeServerConfig } from './grenache/GrapeServerConfig'
+import { IDatabaseModel } from './db/DatabaseModel'
+import { SyncRunner } from './utils/SyncRunner'
+import { ServerCallRequest } from './grenache/SeverCallRequest'
 import { BlocktankCallback } from './callback'
 
 
 // Todo: Sync runner check all implementations
-class GrapeWorker extends EventEmitter {
+export class GrapeWorker extends EventEmitter {
   private gClient: GrenacheClient;
   private gServer: any;
   private db: IDatabaseModel;
@@ -162,4 +162,3 @@ class GrapeWorker extends EventEmitter {
   }
 }
 
-module.exports = GrapeWorker

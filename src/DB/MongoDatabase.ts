@@ -8,6 +8,10 @@ export class MongoDatabase {
   private static dbName = 'Lighthouse';
 
   private static async connect(url: string) {
+    if (this._db) {
+      return this._db;
+    }
+
     const client = new MongoClient(url || "mongodb://0.0.0.0:27017/");
     await client.connect();
     const mongoClient = client.db(this.dbName)

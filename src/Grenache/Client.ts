@@ -1,13 +1,10 @@
 import { BlocktankCallback } from "../callback";
 import { GrapeServerConfig } from "./GrapeServerConfig"
+import { ServerCallRequest } from "./SeverCallRequest";
 
 const Link = require('grenache-nodejs-link')
 const { PeerRPCClient } = require('grenache-nodejs-http')
 
-export interface ServerCallParams {
-  method: string,
-  args: any[]
-}
 
 export class GrenacheClient {
   public peer: typeof PeerRPCClient;
@@ -28,20 +25,20 @@ export class GrenacheClient {
   // @name: Name of the worker
   // @params.method: Method of the worker
   // @params.args: arguments passed to the worker
-  send(name: string, params: ServerCallParams, callback?: BlocktankCallback): Promise<any> {
+  send(params: ServerCallRequest, callback?: BlocktankCallback): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.peer.request(name, params, { timeout: 600000 }, (err: any, data: any) => {
+      this.peer.request(params.service, params, { timeout: 600000 }, (err: any, data: any) => {
         if (err && err.message.includes('ERR_GRAPE_LOOKUP_EMPTY')) {
-          console.log('Cannot find service', name, params)
+          console.log('Cannot find service', params.service, params)
         }
         if (err && err.message.includes('ESOCKETTIMEDOUT')) {
-          console.log('Timedout calling', name, params.method)
+          console.log('Timedout calling', params.service, params.method)
         }
         if (err && err.message.includes('ERR_REQUEST_GENERIC')) {
-          console.log('Timedout calling', name, params.method)
+          console.log('Timedout calling', params.service, params.method)
         }
         if (err && err.message.includes('ERR_GRAPE_LOOKUP_EMPTY')) {
-          console.log('Cannot find service', name, err.message)
+          console.log('Cannot find service', params.service, err.message)
         }
         if (callback) {
           callback(err, data);

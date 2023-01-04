@@ -1,7 +1,10 @@
-// export {GrenacheClient} from './Grenache/Client'
-// export {GrenacheServerFactory as Server} from './Grenache/Server'
-// export {StatusFile} from './StatusFile'
-// export {MongoDatabase as DB} from './DB/DB';
+export {GrenacheClient} from './Grenache/Client'
+export {GrenacheServerFactory as Server} from './Grenache/Server'
+export {StatusFile} from './StatusFile'
+export {MongoDatabase as DB} from './DB/DB';
+export {SatsConvert} from './Utils/sats-convert';
+export {GeoIp} from './Utils/geoip';
+
 
 module.exports = {
   Client: require('./Grenache/Client'),

@@ -25,11 +25,11 @@ async function callAPI(ip: string, token: string): Promise<IpInfoResponse> {
   }
 }
 
-module.exports = {
-  namespace: 'geoip',
-  getIpInfo: async (ip: string, token: string): Promise<IpInfoResponse> => {
+export class GeoIp {
+  public static async getInfo(ip: string, token: string): Promise<IpInfoResponse> {
     const end = ip.includes(':') ? ip.indexOf(':') : ip.length
     const formatted = ip.substr(0, end)
     return callAPI(formatted, token)
   }
 }
+

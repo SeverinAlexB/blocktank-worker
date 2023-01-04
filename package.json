@@ -12,6 +12,7 @@
   "author": "r32a",
   "license": "MIT",
   "dependencies": {
+    "async-mutex": "^0.4.0",
     "axios": "^0.26.0",
     "bignumber.js": "^9.0.2",
     "debug": "^4.3.3",

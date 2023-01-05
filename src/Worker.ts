@@ -11,17 +11,16 @@ import { BlocktankCallback } from './callback'
 
 
 // Todo: Sync runner check all implementations
-export class GrapeWorker extends EventEmitter {
+export class Worker extends EventEmitter {
   private gClient: GrenacheClient;
   private gServer: GranacheServer;
-  private db: IDatabaseModel;
   public syncRunner = new SyncRunner();
   constructor (public config: GrapeServerConfig) {
     super()
   }
 
   public async init() {
-    this.db = await MongoDatabase.getDb(this.config.db_url || 'mongodb://0.0.0.0:27017')
+    await MongoDatabase.getDb(this.config.db_url || 'mongodb://0.0.0.0:27017')
     this.emit('db-ready');
 
     this.gClient = new GrenacheClient(this.config)

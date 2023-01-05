@@ -1,9 +1,9 @@
-import { GrapeWorker } from "./GrapeWorker";
+import { Worker } from "./Worker";
 import { sleep } from "./utils/sleep";
 import { MongoDatabase } from './db/MongoDatabase'
 
 
-class TestWorker extends GrapeWorker {
+class TestWorker extends Worker {
     async testMethod(name: string) {
         return `hello ${name}`;
     }

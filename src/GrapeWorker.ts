@@ -1,6 +1,6 @@
 import { get } from 'lodash'
 import  { EventEmitter } from 'events'
-import {GranacheServer, GrenacheServerFactory} from './grenache/Server'
+import {GranacheServer} from './grenache/Server'
 import {GrenacheClient} from './grenache/Client'
 import { MongoDatabase } from './db/MongoDatabase'
 import { GrapeServerConfig } from './grenache/GrapeServerConfig'
@@ -21,8 +21,6 @@ export class GrapeWorker extends EventEmitter {
   }
 
   public async init() {
-    console.log('Starting Worker: ' + this.workerName)
-
     this.db = await MongoDatabase.getDb(this.config.db_url || 'mongodb://0.0.0.0:27017')
     this.emit('db-ready');
 
@@ -40,7 +38,7 @@ export class GrapeWorker extends EventEmitter {
         const result = await this.callMethod(payload);
         handler.reply(null, result);
       } catch(e) {
-        handler.ready(e, null);
+        handler.reply(e, null);
       }
     })
   }

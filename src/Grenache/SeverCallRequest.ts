@@ -1,7 +1,7 @@
 
 export interface ServerCallRequest {
     method?: string,
-    args: any[],
+    args?: any[],
     service: string
 }
 

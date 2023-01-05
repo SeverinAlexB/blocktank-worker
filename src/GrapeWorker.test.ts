@@ -7,12 +7,18 @@ class TestWorker extends GrapeWorker {
     async testMethod(name: string) {
         return `hello ${name}`;
     }
+    async throwsError() {
+        throw new Error('test');
+    }
+
+    async main() {
+        return 'main';
+    }
 }
 
-jest.setTimeout(10000)
+
 describe('GrapeWorker', () => {
-    test('1 execution', async () => {
-        
+    test('method call', async () => {
         const worker = new TestWorker({
             name: 'test_service'
         });
@@ -28,7 +34,39 @@ describe('GrapeWorker', () => {
         } finally {
             await worker.stop()
         }
+    });
 
+    test('main method call', async () => {
+        const worker = new TestWorker({
+            name: 'test_service'
+        });
+        try {
+            await worker.init();
+            await sleep(100); // Wait until the server is announced on Grape
+            const response = await worker.callWorker({
+                service: 'test_service'
+            });
+            expect(response).toBe('main');
+        } finally {
+            await worker.stop()
+        }
+    });
+
+    test('throwsError method call', async () => {
+        const worker = new TestWorker({
+            name: 'test_service'
+        });
+        try {
+            await worker.init();
+            await sleep(100); // Wait until the server is announced on Grape
+
+            expect(worker.callWorker({
+                method: 'throwsError',
+                service: 'test_service'
+            })).rejects.toThrow(Error);
+        } finally {
+            await worker.stop()
+        }
     });
 });
 

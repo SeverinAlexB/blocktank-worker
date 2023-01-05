@@ -7,7 +7,8 @@
     "test": "npx jest",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "start": "npm run build && node dist/start.js"
+    "start": "npm run build && node dist/start.js",
+    "prepare": "npm run build"
   },
   "author": "r32a",
   "license": "MIT",

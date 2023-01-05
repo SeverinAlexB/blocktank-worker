@@ -1,6 +1,6 @@
 import { get } from 'lodash'
 import  { EventEmitter } from 'events'
-import {GrenacheServerFactory} from './grenache/Server'
+import {GranacheServer, GrenacheServerFactory} from './grenache/Server'
 import {GrenacheClient} from './grenache/Client'
 import { MongoDatabase } from './db/MongoDatabase'
 import { GrapeServerConfig } from './grenache/GrapeServerConfig'
@@ -13,7 +13,7 @@ import { BlocktankCallback } from './callback'
 // Todo: Sync runner check all implementations
 export class GrapeWorker extends EventEmitter {
   private gClient: GrenacheClient;
-  private gServer: any;
+  private gServer: GranacheServer;
   private db: IDatabaseModel;
   public syncRunner = new SyncRunner();
   constructor (public config: GrapeServerConfig) {
@@ -22,16 +22,27 @@ export class GrapeWorker extends EventEmitter {
 
   public async init() {
     console.log('Starting Worker: ' + this.workerName)
-    this.gClient = new GrenacheClient(this.config)
-    this.gServer = GrenacheServerFactory(this.config)
 
-    // Starting Database
     this.db = await MongoDatabase.getDb(this.config.db_url || 'mongodb://0.0.0.0:27017')
     this.emit('db-ready');
 
-    this._syncThrottleNotImplementedWarn();
-    
+    this.gClient = new GrenacheClient(this.config)
     await this.initServer();
+
+    this._syncThrottleNotImplementedWarn();
+  }
+
+  private async initServer() {
+    this.gServer = new GranacheServer(this.config)
+    this.gServer.init();
+    this.gServer.service.on('request', async (peerId: any, service: any, payload: any, handler: any) => {
+      try {
+        const result = await this.callMethod(payload);
+        handler.reply(null, result);
+      } catch(e) {
+        handler.ready(e, null);
+      }
+    })
   }
 
   /**
@@ -40,7 +51,6 @@ export class GrapeWorker extends EventEmitter {
    * @returns Method result
    */
   private async callMethod(request: ServerCallRequest): Promise<any> {
-
     const method = request.method || 'main';
 
     const func = (this as any)[method];
@@ -68,7 +78,7 @@ export class GrapeWorker extends EventEmitter {
         } else if (result instanceof Promise) {
           // Handle promise return
           try {
-            return await result;
+            return resolve(result);
           } catch (e) {
             return reject(e);
           }
@@ -80,16 +90,6 @@ export class GrapeWorker extends EventEmitter {
         // Regular function error
         return reject(e);
       }
-      
-
-    })
-    
-  }
-
-  private async initServer() {
-    this.gServer.on('request', async (rid: any, svc: any, payload: any, handler: any) => {
-      const result = await this.callMethod(payload);
-      // Todo: send back result
     })
   }
 
@@ -100,7 +100,6 @@ export class GrapeWorker extends EventEmitter {
       console.warn(n, "Sync throttle rate limited not implemented in this worker version. Use this.syncRunner.");
     })
   }
-
 
   get workerName(): string {
       return this.config.name;
@@ -157,8 +156,11 @@ export class GrapeWorker extends EventEmitter {
   // }
 
 
-  async stopWorker(){
-    this.gServer.unlisten()
+  async stop(){
+    this.gClient.stop();
+    this.gServer.stop();
+
+    await MongoDatabase.close();
   }
 }
 

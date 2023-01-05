@@ -8,15 +8,16 @@ const { PeerRPCClient } = require('grenache-nodejs-http')
 
 export class GrenacheClient {
   public peer: typeof PeerRPCClient;
+  public link: typeof Link;
 
   constructor (config: GrapeServerConfig) {
     if (config.test_env) return
-    const link = new Link({
+    this.link = new Link({
       grape: config.grape || 'http://127.0.0.1:30001'
     })
-    link.start()
+    this.link.start()
 
-    this.peer = new PeerRPCClient(link, {})
+    this.peer = new PeerRPCClient(this.link, {})
     this.peer.init()
   }
 
@@ -50,7 +51,11 @@ export class GrenacheClient {
         }
       })
     });
+  }
 
+  public stop() {
+    this.link.stop();
+    this.peer.stop();
   }
 
   // No idea if this is still in use?

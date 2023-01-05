@@ -4,29 +4,30 @@ import { IDatabaseModel } from './DatabaseModel';
 
 
 export class MongoDatabase {
-  private static _db: IDatabaseModel;
+  private static model: IDatabaseModel;
+  private static client: MongoClient;
   private static dbName = 'Lighthouse';
 
   private static async connect(url: string) {
-    if (this._db) {
-      return this._db;
+    if (this.model) {
+      return this.model;
     }
 
-    const client = new MongoClient(url || "mongodb://0.0.0.0:27017/");
-    await client.connect();
-    const mongoClient = client.db(this.dbName)
-    this._db = {
-      db: mongoClient,
-      LnChannelOrders: mongoClient.collection('LnChannelOrders'),
-      Inventory: mongoClient.collection('Inventory'),
-      BtcAddress: mongoClient.collection('BtcAddress'),
-      LightningPeers: mongoClient.collection('LightningPeers'),
-      LightningPeerGroups: mongoClient.collection('LightningPeerGroups'),
-      LightningPeerLog: mongoClient.collection('LightningPeerLog'),
-      LightningFwdEvent: mongoClient.collection('LightningFwdEvent'),
+    this.client = new MongoClient(url || "mongodb://0.0.0.0:27017/");
+    await this.client.connect();
+    const db = this.client.db(this.dbName)
+    this.model = {
+      db: db,
+      LnChannelOrders: db.collection('LnChannelOrders'),
+      Inventory: db.collection('Inventory'),
+      BtcAddress: db.collection('BtcAddress'),
+      LightningPeers: db.collection('LightningPeers'),
+      LightningPeerGroups: db.collection('LightningPeerGroups'),
+      LightningPeerLog: db.collection('LightningPeerLog'),
+      LightningFwdEvent: db.collection('LightningFwdEvent'),
 
     }
-    return this._db;
+    return this.model;
   }
 
   // Wrapper to make it compatible with async + callbacks
@@ -40,5 +41,12 @@ export class MongoDatabase {
       })
     }
     return promise;
+  }
+
+  public static async close() {
+    if (this.client){
+      await this.client.close();
+    }
+
   }
 }

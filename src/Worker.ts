@@ -8,6 +8,7 @@ import { IDatabaseModel } from './db/DatabaseModel'
 import { SyncRunner } from './utils/SyncRunner'
 import { ServerCallRequest } from './grenache/SeverCallRequest'
 import { BlocktankCallback } from './callback'
+import { sleep } from './utils'
 
 
 // Todo: Sync runner check all implementations
@@ -27,6 +28,7 @@ export class Worker extends EventEmitter {
     await this.initServer();
 
     this._syncThrottleNotImplementedWarn();
+    await sleep(100); // Wait until the server is announced on Grape
   }
 
   private async initServer() {
@@ -102,7 +104,7 @@ export class Worker extends EventEmitter {
       return this.config.name;
   }
 
-  async callWorker (request: ServerCallRequest, callback?: BlocktankCallback) {
+  async call (request: ServerCallRequest, callback?: BlocktankCallback) {
     if (callback) {
       this.gClient.send(request, callback);
     } else {

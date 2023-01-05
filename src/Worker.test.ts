@@ -4,8 +4,8 @@ import { MongoDatabase } from './db/MongoDatabase'
 
 
 class TestWorker extends Worker {
-    async testMethod(name: string) {
-        return `hello ${name}`;
+    async testMethod(name: string, name2: string) {
+        return `hello ${name} and ${name2}`;
     }
     async throwsError() {
         throw new Error('test');
@@ -24,13 +24,12 @@ describe('GrapeWorker', () => {
         });
         try {
             await worker.init();
-            await sleep(100); // Wait until the server is announced on Grape
-            const response = await worker.callWorker({
+            const response = await worker.call({
                 method: 'testMethod',
-                args: ['Sepp'],
+                args: ['Sepp', 'Pirmin'],
                 service: 'test_service'
             });
-            expect(response).toBe('hello Sepp');
+            expect(response).toBe('hello Sepp and Pirmin');
         } finally {
             await worker.stop()
         }
@@ -42,8 +41,7 @@ describe('GrapeWorker', () => {
         });
         try {
             await worker.init();
-            await sleep(100); // Wait until the server is announced on Grape
-            const response = await worker.callWorker({
+            const response = await worker.call({
                 service: 'test_service'
             });
             expect(response).toBe('main');
@@ -58,9 +56,7 @@ describe('GrapeWorker', () => {
         });
         try {
             await worker.init();
-            await sleep(100); // Wait until the server is announced on Grape
-
-            expect(worker.callWorker({
+            expect(worker.call({
                 method: 'throwsError',
                 service: 'test_service'
             })).rejects.toThrow(Error);

@@ -28,7 +28,7 @@ export class GrenacheClient {
   // @params.args: arguments passed to the worker
   send(params: ServerCallRequest, callback?: BlocktankCallback): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.peer.request(params.service, params, { timeout: 600000 }, (err: any, data: any) => {
+      this.peer.request(params.service, params, { timeout: params.timeoutMs || 600000 }, (err: any, data: any) => {
         if (err && err.message.includes('ERR_GRAPE_LOOKUP_EMPTY')) {
           console.log('Cannot find service', params.service, params)
         }

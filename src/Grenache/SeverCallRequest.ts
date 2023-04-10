@@ -2,7 +2,8 @@
 export interface ServerCallRequest {
     method?: string,
     args?: any[],
-    service: string
+    service: string,
+    timeoutMs?: number,
 }
 
 

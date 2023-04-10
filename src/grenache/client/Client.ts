@@ -9,6 +9,9 @@ const Link = require('grenache-nodejs-link')
 const { PeerRPCClient } = require('grenache-nodejs-http')
 
 
+/**
+ * Client to call other services.
+ */
 export class GrenacheClient {
   public peer: typeof PeerRPCClient;
   public link: typeof Link;
@@ -20,6 +23,9 @@ export class GrenacheClient {
     this.peer = new PeerRPCClient(this.link, {})
   }
 
+  /**
+   * Start DHT connection.
+   */
   init() {
     this.link.start()
     this.peer.init()
@@ -27,7 +33,7 @@ export class GrenacheClient {
 
 
   /**
-   * Call another worker
+   * Call another services.
    * @param params 
    * @returns 
    */
@@ -37,7 +43,6 @@ export class GrenacheClient {
     const params: MethodCallOptions = {
       method: method,
       args: args,
-      service: serviceName,
     }
 
     return new Promise((resolve, reject) => {
@@ -63,6 +68,9 @@ export class GrenacheClient {
     });
   }
 
+  /**
+   * Stop DHT connection.
+   */
   public stop() {
     this.link.stop();
     this.peer.stop();

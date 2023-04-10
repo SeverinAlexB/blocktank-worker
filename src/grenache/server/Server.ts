@@ -4,7 +4,9 @@ import { GrenacheServerConfig, defaultGrenacheServerConfig } from "./Config";
 const Link = require('grenache-nodejs-link')
 const { PeerRPCServer } = require('grenache-nodejs-http')
 
-
+/**
+ * Server to expose methods to other services.
+ */
 export class GrenacheServer {
   public peer: typeof PeerRPCServer;
   public link: typeof Link;
@@ -15,6 +17,9 @@ export class GrenacheServer {
     this.config = Object.assign({}, defaultGrenacheServerConfig, config)
   }
 
+  /**
+   * Start listening.
+   */
   public init() {
     this.link = new Link({
       grape: this.config.grapeUrl
@@ -30,6 +35,9 @@ export class GrenacheServer {
     this.link.announce(this.config.name, this.service.port, {})
   }
 
+  /**
+   * Stop listening.
+   */
   public stop() {
     if (this.service) {
       this.service.unlisten();

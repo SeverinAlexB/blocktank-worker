@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events'
 import { GrenacheServer } from '../server/Server'
 import { GrenacheClient } from '../client/Client'
 
@@ -6,24 +5,30 @@ import { GrenacheServerConfig, defaultGrenacheServerConfig } from '../server/Con
 import { SyncRunner } from '../../utils/SyncRunner'
 import { MethodCallOptions } from '../server/MethodCallOptions'
 import { sleep } from '../../utils'
-import { ServiceWorker } from './ServiceWorker'
+import { ServiceWorker } from './Worker'
 import { GrenacheClientCallOptions } from '../client/CallOptions'
 import { ServiceNameType } from '../ServiceNameType'
 import { EncapsulatedServiceClient } from '../client/EncapsulatedServiceClient'
 
 
 // Todo: Sync runner check all implementations
-export class WorkerRunner extends EventEmitter {
+
+/**
+ * Combines the server and client to run a service.
+ */
+export class ServiceRunner {
   private gClient: GrenacheClient;
   private gServer: GrenacheServer;
   public syncRunner = new SyncRunner();
   public config: GrenacheServerConfig;
   constructor(public worker: ServiceWorker, config: Partial<GrenacheServerConfig> = {}) {
-    super()
     this.config = Object.assign({}, defaultGrenacheServerConfig, config)
     this.worker.runner = this;
   }
 
+  /**
+   * Start listening for requests
+   */
   public async start() {
 
     this.gClient = new GrenacheClient(this.config.grapeUrl)
@@ -80,7 +85,6 @@ export class WorkerRunner extends EventEmitter {
         methodArgs.push(callback)
       }
 
-
       try {
         const result = await func.bind(this.worker).apply(this, methodArgs);
         if (this.config.callbackSupport && result === undefined) {
@@ -104,10 +108,14 @@ export class WorkerRunner extends EventEmitter {
       })
   }
 
-  get workerName(): string {
-    return this.config.name;
-  }
-
+  /**
+   * Call another service. User service() for more convenient usage.
+   * @param serviceName 
+   * @param method 
+   * @param args 
+   * @param opts 
+   * @returns 
+   */
   async call(serviceName: ServiceNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}) {
     return await this.gClient.call(serviceName, method, args, opts);
   }
@@ -125,6 +133,9 @@ export class WorkerRunner extends EventEmitter {
   }
 
 
+  /**
+   * Shut down the service gracefully.
+   */
   async stop() {
     this.gClient.stop();
     this.gServer.stop();

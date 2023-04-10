@@ -1,5 +1,5 @@
 import { ServiceWorker } from "./ServiceWorker";
-import { WorkerRunner } from "./WorkerRunner";
+import { ServiceRunner } from "./Runner";
 import { sleep } from "../../utils";
 import GrenacheClientCallError, { GrenacheClientCallErrorCodes } from "../client/CallError";
 
@@ -25,11 +25,11 @@ class TestWorker extends ServiceWorker {
 jest.setTimeout(60 * 1000)
 
 
-describe('WorkerRunner', () => {
+describe('ServiceRunner', () => {
 
     test('Undefined method name', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker);
+        const runner = new ServiceRunner(worker);
         try {
             await runner.start();
             await runner.call(runner.config.name, 'undefinedMethod');
@@ -43,7 +43,7 @@ describe('WorkerRunner', () => {
 
     test('Wrong number of arguments', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker);
+        const runner = new ServiceRunner(worker);
         try {
             await runner.start();
             await runner.call(runner.config.name, 'method', ['Sepp', 'Primin']);
@@ -56,7 +56,7 @@ describe('WorkerRunner', () => {
 
     test('Wrong number of arguments - callback support', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker, {callbackSupport: true});
+        const runner = new ServiceRunner(worker, {callbackSupport: true});
         try {
             await runner.start();
             const response = await runner.call(runner.config.name, 'methodCallback', ['Sepp']);
@@ -71,7 +71,7 @@ describe('WorkerRunner', () => {
 
     test('Hit method timeout', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker);
+        const runner = new ServiceRunner(worker);
         try {
             await runner.start();
             await runner.call(runner.config.name, 'sleep', [], { timeoutMs: 1000 });
@@ -86,7 +86,7 @@ describe('WorkerRunner', () => {
 
     test('Hit connect timeout', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker);
+        const runner = new ServiceRunner(worker);
         await runner.start();
         await runner.stop()
         try {
@@ -102,7 +102,7 @@ describe('WorkerRunner', () => {
 
     test('Unknown service', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker);
+        const runner = new ServiceRunner(worker);
         await runner.start();
         try {
             await runner.call('srv:UnknownService', 'undefienedMethod');

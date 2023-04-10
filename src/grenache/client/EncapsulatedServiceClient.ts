@@ -19,11 +19,15 @@ export class EncapsulatedServiceClient {
     }
 }
 
+/**
+ * Translates every generic function method to service.call(method, args)
+ * @param service 
+ * @returns 
+ */
 function allowAllFunctions(service: EncapsulatedServiceClient) {
     let handler = {
         get(target: EncapsulatedServiceClient, functionName: string) {
             return function (...args: any[]) {
-                console.log('args', args)
                 return target.call(functionName, args)
             };
         }

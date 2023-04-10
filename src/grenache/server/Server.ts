@@ -1,19 +1,23 @@
-import { GrapeServerConfig } from "./GrapeServerConfig"
+import { GrenacheServerConfig, defaultGrenacheServerConfig } from "./Config";
+
 
 const Link = require('grenache-nodejs-link')
 const { PeerRPCServer } = require('grenache-nodejs-http')
 
 
-export class GranacheServer {
+export class GrenacheServer {
   public peer: typeof PeerRPCServer;
   public link: typeof Link;
   public service: any;
-  constructor(public config: GrapeServerConfig){}
+  public config: GrenacheServerConfig;
+
+  constructor(config: Partial<GrenacheServerConfig>){
+    this.config = Object.assign({}, defaultGrenacheServerConfig, config)
+  }
 
   public init() {
-    if (this.config.test_env) return
     this.link = new Link({
-      grape: this.config.grape || 'http://127.0.0.1:30001'
+      grape: this.config.grapeUrl
     })
     this.link.start()
   

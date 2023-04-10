@@ -1,5 +1,4 @@
 import { MongoClient } from 'mongodb';
-import { BlocktankCallback } from '../callback';
 import { IDatabaseModel } from './DatabaseModel';
 
 
@@ -8,7 +7,7 @@ export class MongoDatabase {
   private static client: MongoClient;
   private static dbName = 'Lighthouse';
 
-  private static async connect(url: string) {
+  public static async connect(url: string) {
     if (this.model) {
       return this.model;
     }
@@ -28,19 +27,6 @@ export class MongoDatabase {
 
     }
     return this.model;
-  }
-
-  // Wrapper to make it compatible with async + callbacks
-  public static getDb(mongoUrl: string, callback?: BlocktankCallback): Promise<IDatabaseModel> {
-    const promise = this.connect(mongoUrl);
-    if (callback) {
-      promise.then(data => {
-        callback(null, data);
-      }, err => {
-        callback(err, null);
-      })
-    }
-    return promise;
   }
 
   public static async close() {

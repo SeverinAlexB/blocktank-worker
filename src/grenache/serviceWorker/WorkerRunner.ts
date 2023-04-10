@@ -9,6 +9,7 @@ import { sleep } from '../../utils'
 import { ServiceWorker } from './ServiceWorker'
 import { GrenacheClientCallOptions } from '../client/CallOptions'
 import { ServiceNameType } from '../ServiceNameType'
+import { EncapsulatedServiceClient } from '../client/EncapsulatedServiceClient'
 
 
 // Todo: Sync runner check all implementations
@@ -65,8 +66,6 @@ export class WorkerRunner extends EventEmitter {
       throw new Error(`Worker method ${method} expects ${func.length} arguments, but ${args.length} were provided.`)
     }
 
-
-
     return new Promise(async (resolve, reject) => {
       const methodArgs = [...args]
       if (this.config.callbackSupport) {
@@ -84,7 +83,6 @@ export class WorkerRunner extends EventEmitter {
 
       try {
         const result = await func.bind(this.worker).apply(this, methodArgs);
-
         if (this.config.callbackSupport && result === undefined) {
           // No result. Wait on callback;
           return;
@@ -112,6 +110,18 @@ export class WorkerRunner extends EventEmitter {
 
   async call(serviceName: ServiceNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}) {
     return await this.gClient.call(serviceName, method, args, opts);
+  }
+
+  /**
+   * Return an object that represents the service. You can call all service methods on this object directly.
+   * For example:
+   * const myFirstService = runner.service('srv:myFirstService');
+   * const result = await myFirstService.helloWorld('John');
+   * @param name Service name
+   * @returns Service object
+   */
+  service(name: ServiceNameType) {
+    return EncapsulatedServiceClient.construct(name, this.gClient);
   }
 
 

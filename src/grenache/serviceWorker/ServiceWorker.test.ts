@@ -115,5 +115,18 @@ describe('ServiceWorker', () => {
             await runner.stop()
         }
     });
+
+    test('encapsulated service', async () => {
+        const worker = new TestWorker()
+        const runner = new WorkerRunner(worker);
+        try {
+            await runner.start();
+            const service = runner.service(runner.config.name);
+            const response = await service.syncMethod('Sepp')
+            expect(response).toBe('hello Sepp');
+        } finally {
+            await runner.stop()
+        }
+    });
 });
 

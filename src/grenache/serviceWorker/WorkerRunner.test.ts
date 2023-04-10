@@ -10,6 +10,14 @@ class TestWorker extends ServiceWorker {
         return "1"
     }
 
+    method(name: string) {
+        return `hello ${name}`;
+    }
+
+    methodCallback(name: string, callback: (err: any, data: any) => void) {
+        callback(null, `hello ${name}`);
+    }
+
 
 }
 
@@ -26,6 +34,33 @@ describe('WorkerRunner', () => {
             await runner.start();
             await runner.call(runner.config.name, 'undefinedMethod');
             expect(false).toBe(true);
+        } catch (e) {
+            expect(e).toBeInstanceOf(Error)
+        } finally {
+            await runner.stop()
+        }
+    });
+
+    test('Wrong number of arguments', async () => {
+        const worker = new TestWorker()
+        const runner = new WorkerRunner(worker);
+        try {
+            await runner.start();
+            await runner.call(runner.config.name, 'method', ['Sepp', 'Primin']);
+        } catch (e) {
+            expect(e).toBeInstanceOf(Error)
+        } finally {
+            await runner.stop()
+        }
+    });
+
+    test('Wrong number of arguments - callback support', async () => {
+        const worker = new TestWorker()
+        const runner = new WorkerRunner(worker, {callbackSupport: true});
+        try {
+            await runner.start();
+            const response = await runner.call(runner.config.name, 'methodCallback', ['Sepp']);
+            expect(response).toEqual('hello Sepp');
         } catch (e) {
             expect(e).toBeInstanceOf(GrenacheClientCallError)
             expect((e as GrenacheClientCallError).code).toEqual(GrenacheClientCallErrorCodes.ESOCKETTIMEDOUT)

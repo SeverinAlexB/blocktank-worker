@@ -1,6 +1,6 @@
-import  { EventEmitter } from 'events'
-import {GrenacheServer} from '../server/Server'
-import {GrenacheClient} from '../client/Client'
+import { EventEmitter } from 'events'
+import { GrenacheServer } from '../server/Server'
+import { GrenacheClient } from '../client/Client'
 
 import { GrenacheServerConfig, defaultGrenacheServerConfig } from '../server/Config'
 import { SyncRunner } from '../../utils/SyncRunner'
@@ -17,7 +17,7 @@ export class WorkerRunner extends EventEmitter {
   private gServer: GrenacheServer;
   public syncRunner = new SyncRunner();
   public config: GrenacheServerConfig;
-  constructor (public worker: ServiceWorker, config: Partial<GrenacheServerConfig> = {}) {
+  constructor(public worker: ServiceWorker, config: Partial<GrenacheServerConfig> = {}) {
     super()
     this.config = Object.assign({}, defaultGrenacheServerConfig, config)
     this.worker.runner = this;
@@ -40,28 +40,36 @@ export class WorkerRunner extends EventEmitter {
       try {
         const result = await this.callMethod(payload);
         handler.reply(null, result);
-      } catch(e) {
+      } catch (e) {
         handler.reply(e, null);
       }
     })
   }
 
-    /**
-   * Calls the method in this worker. Supports sync, async, and callback methods.
-   * @param request 
-   * @returns Method result
-   */
-    private async callMethod(request: MethodCallOptions): Promise<any> {
-      const method = request.method || 'main';
-  
-      const func = (this.worker as any)[method];
-      if (!func) {
-        throw new Error(`Worker method ${method} not found.`);
-      }
-  
-      const args = request.args || [];
-  
-      return new Promise(async (resolve, reject) => {
+  /**
+ * Calls the method in this worker. Supports sync, async, and callback methods.
+ * @param request 
+ * @returns Method result
+ */
+  private async callMethod(request: MethodCallOptions): Promise<any> {
+    const method = request.method || 'main';
+
+    const func = (this.worker as any)[method];
+    if (!func) {
+      throw new Error(`Worker method ${method} not found.`);
+    }
+
+    const args = request.args || [];
+
+    if (!this.config.callbackSupport && args.length !== func.length) {
+      throw new Error(`Worker method ${method} expects ${func.length} arguments, but ${args.length} were provided.`)
+    }
+
+
+
+    return new Promise(async (resolve, reject) => {
+      const methodArgs = [...args]
+      if (this.config.callbackSupport) {
         // Callback support
         const callback = (error: any, data: any) => {
           if (error) {
@@ -70,49 +78,44 @@ export class WorkerRunner extends EventEmitter {
             resolve(data);
           }
         }
-  
-        try {
-          const result = func.bind(this.worker).apply(this, [...args, callback]);
-          if (result === undefined) {
-            // No result. Wait on callback;
-            return;
-          } else if (result instanceof Promise) {
-            // Handle promise return
-            try {
-              return resolve(result);
-            } catch (e) {
-              return reject(e);
-            }
-          } else {
-            // Regular sync function.
-            return resolve(result);
-          }
-        } catch (e) {
-          // Regular function error
-          return reject(e);
+        methodArgs.push(callback)
+      }
+
+
+      try {
+        const result = await func.bind(this.worker).apply(this, methodArgs);
+
+        if (this.config.callbackSupport && result === undefined) {
+          // No result. Wait on callback;
+          return;
         }
-      })
-    }
+        return resolve(result);
+      } catch (e) {
+        // Regular function error
+        return reject(e);
+      }
+    })
+  }
 
 
   private _syncThrottleNotImplementedWarn() {
     Object.getOwnPropertyNames(Object.getPrototypeOf(this))
-    .forEach((n) => {
-      if (!n.endsWith('Sync')) return
-      console.warn(n, "Sync throttle rate limited not implemented in this worker version. Use this.syncRunner.");
-    })
+      .forEach((n) => {
+        if (!n.endsWith('Sync')) return
+        console.warn(n, "Sync throttle rate limited not implemented in this worker version. Use this.syncRunner.");
+      })
   }
 
   get workerName(): string {
-      return this.config.name;
+    return this.config.name;
   }
 
-  async call (serviceName: ServiceNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}) {
-      return await this.gClient.call(serviceName, method, args, opts);
+  async call(serviceName: ServiceNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}) {
+    return await this.gClient.call(serviceName, method, args, opts);
   }
 
 
-  async stop(){
+  async stop() {
     this.gClient.stop();
     this.gServer.stop();
   }

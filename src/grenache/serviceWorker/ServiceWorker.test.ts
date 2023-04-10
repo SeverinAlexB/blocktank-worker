@@ -91,7 +91,7 @@ describe('ServiceWorker', () => {
 
     test('callback method call', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker);
+        const runner = new WorkerRunner(worker, {callbackSupport: true});
         try {
             await runner.start();
             const response = await runner.call(runner.config.name, 'callbackMethod', ['Sepp']);
@@ -103,7 +103,7 @@ describe('ServiceWorker', () => {
 
     test('callback error method call', async () => {
         const worker = new TestWorker()
-        const runner = new WorkerRunner(worker);
+        const runner = new WorkerRunner(worker, {callbackSupport: true});
         try {
             await runner.start();
             await sleep(1000)

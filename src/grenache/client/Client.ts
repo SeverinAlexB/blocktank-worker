@@ -1,9 +1,10 @@
 
-import { ServiceNameType } from "../ServiceNameType";
+import { WorkerNameType } from "../WorkerNameType";
 import { defaultGrenacheServerConfig } from "../server/Config";
 import { MethodCallOptions } from "../server/MethodCallOptions";
 import GrenacheClientCallError, { GrenacheClientCallErrorCodes } from "./CallError";
 import { defaultGrenacheClientCallOptions, GrenacheClientCallOptions } from "./CallOptions";
+import { EncapsulatedServiceClient } from "./EncapsulatedServiceClient";
 
 const Link = require('grenache-nodejs-link')
 const { PeerRPCClient } = require('grenache-nodejs-http')
@@ -16,7 +17,7 @@ export class GrenacheClient {
   public peer: typeof PeerRPCClient;
   public link: typeof Link;
 
-  constructor (public grapeUrl: string = defaultGrenacheServerConfig.grapeUrl) {
+  constructor(public grapeUrl: string = defaultGrenacheServerConfig.grapeUrl) {
     this.link = new Link({
       grape: grapeUrl
     })
@@ -37,7 +38,7 @@ export class GrenacheClient {
    * @param params 
    * @returns 
    */
-  call(serviceName: ServiceNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}): Promise<any> {
+  call(serviceName: WorkerNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}): Promise<any> {
     opts = Object.assign({}, defaultGrenacheClientCallOptions, opts)
 
     const params: MethodCallOptions = {
@@ -50,7 +51,7 @@ export class GrenacheClient {
         if (!err) {
           resolve(data)
         }
-        
+
         const hasErrorMessage = typeof err?.message === 'string' || err?.message instanceof String
         if (!hasErrorMessage) {
           return reject(err); // Other type of error, throw directly
@@ -67,6 +68,19 @@ export class GrenacheClient {
       })
     });
   }
+
+/**
+ * Return an object that represents another worker. You can call any methods on this object directly.
+ * For example:
+ * const myFirstWorker = client.encapsulateWorker('srv:MyFirstWorker');
+ * const result = await myFirstWorker.helloWorld('John');
+ * @param name Worker name
+ * @returns Worker object
+ */
+  encapsulateWorker(name: WorkerNameType) {
+    return EncapsulatedServiceClient.construct(name, this);
+  }
+
 
   /**
    * Stop DHT connection.

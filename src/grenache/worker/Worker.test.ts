@@ -1,129 +1,115 @@
-import { ServiceWorker } from "./Worker";
-import { ServiceRunner } from "./Runner";
+import { WorkerImplementation } from "./WorkerImplementation";
+import { Worker } from "./Worker";
 import { sleep } from "../../utils";
+import GrenacheClientCallError, { GrenacheClientCallErrorCodes } from "../client/CallError";
 
 
-class TestWorker extends ServiceWorker {
-    async asyncMethod(name: String) {
+class TestWorker extends WorkerImplementation {
+    async sleep() {
+        await sleep(10 * 1000)
+        return "1"
+    }
+
+    method(name: string) {
         return `hello ${name}`;
     }
 
-    async asyncMethodError(name: string) {
-        throw new Error(`Hello ${name}`);
-    }
-
-    syncMethod(name: string) {
-        return `hello ${name}`;
-    }
-
-    syncMethodError(name: string) {
-        throw new Error(`Hello ${name}`);
-    }
-
-    callbackMethod(name: string, callback: (err: any, data: any) => void) {
+    methodCallback(name: string, callback: (err: any, data: any) => void) {
         callback(null, `hello ${name}`);
     }
 
-    callbackMethodError(name: string, callback: (err: any, data?: any) => void) {
-        callback(new Error(`Hello ${name}`));
-    }
 
 }
 
 
-jest.setTimeout(60*1000)
+jest.setTimeout(60 * 1000)
 
 
-describe('ServiceWorker', () => {
-    test('sync method call', async () => {
+describe('Worker', () => {
+
+    test('Undefined method name', async () => {
         const worker = new TestWorker()
-        const runner = new ServiceRunner(worker);
+        const runner = new Worker(worker);
         try {
             await runner.start();
-            const response = await runner.call(runner.config.name, 'syncMethod', ['Sepp']);
-            expect(response).toBe('hello Sepp');
-        } finally {
-            await runner.stop()
-        }
-    });
-
-    test('sync error method call', async () => {
-        const worker = new TestWorker()
-        const runner = new ServiceRunner(worker);
-        try {
-            await runner.start();
-            await sleep(1000)
-            await runner.call(runner.config.name, 'syncMethodError', ['Sepp']);
-            expect(true).toBe(false);
+            await runner.call(runner.config.name, 'undefinedMethod');
+            expect(false).toBe(true);
         } catch (e) {
-            expect(e.message).toEqual('Hello Sepp')
+            expect(e).toBeInstanceOf(Error)
         } finally {
             await runner.stop()
         }
     });
 
-    test('async method call', async () => {
+    test('Wrong number of arguments', async () => {
         const worker = new TestWorker()
-        const runner = new ServiceRunner(worker);
+        const runner = new Worker(worker);
         try {
             await runner.start();
-            const response = await runner.call(runner.config.name, 'asyncMethod', ['Sepp']);
-            expect(response).toBe('hello Sepp');
-        } finally {
-            await runner.stop()
-        }
-    });
-
-    test('async error method call', async () => {
-        const worker = new TestWorker()
-        const runner = new ServiceRunner(worker);
-        try {
-            await runner.start();
-            await sleep(1000)
-            await runner.call(runner.config.name, 'asyncMethodError', ['Sepp']);
-            expect(true).toBe(false);
+            await runner.call(runner.config.name, 'method', ['Sepp', 'Primin']);
         } catch (e) {
-            expect(e.message).toEqual('Hello Sepp')
+            expect(e).toBeInstanceOf(Error)
         } finally {
             await runner.stop()
         }
     });
 
-    test('callback method call', async () => {
+    test('Wrong number of arguments - callback support', async () => {
         const worker = new TestWorker()
-        const runner = new ServiceRunner(worker, {callbackSupport: true});
+        const runner = new Worker(worker, {callbackSupport: true});
         try {
             await runner.start();
-            const response = await runner.call(runner.config.name, 'callbackMethod', ['Sepp']);
-            expect(response).toBe('hello Sepp');
-        } finally {
-            await runner.stop()
-        }
-    });
-
-    test('callback error method call', async () => {
-        const worker = new TestWorker()
-        const runner = new ServiceRunner(worker, {callbackSupport: true});
-        try {
-            await runner.start();
-            await sleep(1000)
-            await runner.call(runner.config.name, 'callbackMethodError', ['Sepp']);
-            expect(true).toBe(false);
+            const response = await runner.call(runner.config.name, 'methodCallback', ['Sepp']);
+            expect(response).toEqual('hello Sepp');
         } catch (e) {
-            expect(e.message).toEqual('Hello Sepp')
+            expect(e).toBeInstanceOf(GrenacheClientCallError)
+            expect((e as GrenacheClientCallError).code).toEqual(GrenacheClientCallErrorCodes.ESOCKETTIMEDOUT)
         } finally {
             await runner.stop()
         }
     });
 
-    test('encapsulated service', async () => {
+    test('Hit method timeout', async () => {
         const worker = new TestWorker()
-        const runner = new ServiceRunner(worker);
+        const runner = new Worker(worker);
         try {
             await runner.start();
-            const service = runner.service(runner.config.name);
-            const response = await service.syncMethod('Sepp')
-            expect(response).toBe('hello Sepp');
+            await runner.call(runner.config.name, 'sleep', [], { timeoutMs: 1000 });
+            expect(false).toBe(true);
+        } catch (e) {
+            expect(e).toBeInstanceOf(GrenacheClientCallError)
+            expect((e as GrenacheClientCallError).code).toEqual(GrenacheClientCallErrorCodes.ESOCKETTIMEDOUT)
+        } finally {
+            await runner.stop()
+        }
+    });
+
+    test('Hit connect timeout', async () => {
+        const worker = new TestWorker()
+        const runner = new Worker(worker);
+        await runner.start();
+        await runner.stop()
+        try {
+            await runner.call(runner.config.name, 'undefienedMethod');
+            expect(false).toBe(true);
+        } catch (e) {
+            expect(e).toBeInstanceOf(GrenacheClientCallError)
+            expect((e as GrenacheClientCallError).code).toEqual(GrenacheClientCallErrorCodes.ERR_REQUEST_GENERIC)
+        } finally {
+            await runner.stop()
+        }
+    });
+
+    test('Unknown worker', async () => {
+        const worker = new TestWorker()
+        const runner = new Worker(worker);
+        await runner.start();
+        try {
+            await runner.call('worker:UnknownWorker', 'undefienedMethod');
+            expect(false).toBe(true);
+        } catch (e) {
+            expect(e).toBeInstanceOf(GrenacheClientCallError)
+            expect((e as GrenacheClientCallError).code).toEqual(GrenacheClientCallErrorCodes.SERVICE_NOT_FOUND)
         } finally {
             await runner.stop()
         }

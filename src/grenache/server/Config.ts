@@ -1,4 +1,4 @@
-import { ServiceNameType } from "../ServiceNameType"
+import { WorkerNameType } from "../WorkerNameType"
 
 export interface GrenacheServerConfig {
     /**
@@ -6,13 +6,13 @@ export interface GrenacheServerConfig {
      */
     grapeUrl: string,
     /**
-     * Port that the server listens on. If not specified, a random port will be used.
+     * Port that the server listens on. Default: Random port between 10,000 and 40,000.
      */
     port: number,
     /**
-     * Name of the service. If not specified, a random name will be used.
+     * Name of the service. Default: Random name.
      */
-    name: ServiceNameType,
+    name: WorkerNameType,
 
     /**
      * If true, the server will support callbacks. This will disable the method argument count check
@@ -25,6 +25,6 @@ export interface GrenacheServerConfig {
 export const defaultGrenacheServerConfig: GrenacheServerConfig = {
   grapeUrl: 'http://127.0.0.1:30001',
   port: Math.ceil(Math.random() * 10000 + 30000),
-  name: `srv:pinotNoir${Math.ceil(Math.random() * 100000)}`,
+  name: `worker:pinotNoir${Math.ceil(Math.random() * 100000)}`,
   callbackSupport: false
 }

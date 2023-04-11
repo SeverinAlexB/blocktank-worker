@@ -110,7 +110,7 @@ export class Worker {
   }
 
   public async subscribeToEvents() {
-    for (const sub of this.worker.eventSubscriptions) {
+    for (const sub of (this.worker as any).eventSubscriptions) {
       await this.gClient.call(sub.workerName, '_subscribeToEvents', [this.config.name, sub.events])
     }
   }

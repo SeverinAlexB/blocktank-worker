@@ -1,17 +1,17 @@
 import { WorkerImplementation } from "./WorkerImplementation";
 import { Worker } from "./Worker";
-import { EventSubscription } from "./events/EventSubscription";
-
+import {SubscribeToBlocktankEvent} from './events/EventDecorator'
 
 
 class ServerImplementation extends WorkerImplementation {
 }
 
 class ListenerImplementation extends WorkerImplementation {
-    eventSubscriptions = [
-        new EventSubscription('worker:server', ['invoicePaid'])
-    ]
+    // static eventSubscriptions = [
+    //     new EventSubscription('worker:server', ['invoicePaid'])
+    // ]
 
+    @SubscribeToBlocktankEvent('worker:server', 'invoicePaid')
     async invoicePaid(param: string) {
         console.log('invoicePaid', param)
         return true
@@ -23,6 +23,11 @@ jest.setTimeout(60*1000)
 
 
 describe('EventSubscription', () => {
+    test('EventDecorator', async () => {
+        const implementation = new ListenerImplementation()
+        await implementation.invoicePaid('test')
+    });
+
     test('Event notification', async () => {
         const serverImplementation = new ServerImplementation()
         const server = new Worker(serverImplementation, {
@@ -51,4 +56,5 @@ describe('EventSubscription', () => {
 
 
 });
+
 

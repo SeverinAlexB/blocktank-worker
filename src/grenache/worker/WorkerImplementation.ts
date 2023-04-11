@@ -13,7 +13,22 @@ export class WorkerImplementation {
   public runner: Worker // Set by the Worker class
   public subscriptions: SubscriptionManager // Set by the Worker class
 
-  public eventSubscriptions: EventSubscription[] = [] // Events that the worker will subscribe to on start.
+  eventSubscriptions: EventSubscription[] = []
+
+  constructor() {
+    const prototype = Object.getPrototypeOf(this)
+    const registeredEvents = prototype['registeredEvents'] || []
+    console.log('constructor', registeredEvents)
+  }
+
+  private extractDecoratorEventSubscriptions() {
+    const prototype = Object.getPrototypeOf(this)
+    const registeredEvents = prototype['registeredEvents'] || []
+    console.log('extractEventSubscriptions', registeredEvents)
+    return registeredEvents.map((event: any) => {
+      return new EventSubscription(event.workerName, [event.eventName])
+    })
+  }
 
   get name(): string {
     return this.runner.config.name

@@ -2,9 +2,16 @@
 
 This module is the base class that all microservice workers in Blocktank use. It is written in Typescript but can also be used with javascript.
 
+## Usage
 
 ```bash
 npm i git+https://github.com/SeverinAlexB/blocktank-worker.git#typescript
+```
+
+Run DHT
+```bash
+grape --dp 20001 --aph 30001 --bn '127.0.0.1:20002' &
+grape --dp 20002 --aph 40001 --bn '127.0.0.1:20001' &  
 ```
 
 ## Worker
@@ -75,7 +82,7 @@ try {
 
 ## Client
 
-`GrenacheClient` allows you to call other workers without exposing your own methods.
+`GrenacheClient` allows you to call other workers without exposing your own server.
 
 ```typescript
 import { GrenacheClient } from 'blocktank-worker'
@@ -110,8 +117,8 @@ console.log(response2) // Hello Sepp and Pirmin
 * `workerName` *string* Name of the worker you want to call.
 * `method` *string* Method name you want to call.
 * `args?` *any[]* List of arguments. Default: [].
-* `opts?`: *GrenacheClientCallOptions*
-    * `timeoutMs` Request timeout in milliseconds. Default: 60,000.
+* `opts?`: *Partial GrenacheClientCallOptions*
+    * `timeoutMs?` Request timeout in milliseconds. Default: 60,000.
 
 **encapsulateWorker(workerName)** Conveninence wrapper. Returns a worker object that can be called with any worker method.
 

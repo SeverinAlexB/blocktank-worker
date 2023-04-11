@@ -17,7 +17,7 @@ export class GrenacheClient {
   public peer: typeof PeerRPCClient;
   public link: typeof Link;
 
-  constructor(public grapeUrl: string = defaultGrenacheServerConfig.grapeUrl) {
+  constructor(public grapeUrl: string = defaultGrenacheServerConfig().grapeUrl) {
     this.link = new Link({
       grape: grapeUrl
     })

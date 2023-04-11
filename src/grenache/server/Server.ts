@@ -14,7 +14,7 @@ export class GrenacheServer {
   public config: GrenacheServerConfig;
 
   constructor(config: Partial<GrenacheServerConfig>){
-    this.config = Object.assign({}, defaultGrenacheServerConfig, config)
+    this.config = Object.assign({}, defaultGrenacheServerConfig(), config)
   }
 
   /**

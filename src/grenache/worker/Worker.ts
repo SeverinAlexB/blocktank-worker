@@ -6,9 +6,8 @@ import { SyncRunner } from '../../utils/SyncRunner'
 import { MethodCallOptions } from '../server/MethodCallOptions'
 import { sleep } from '../../utils'
 import { WorkerImplementation } from './WorkerImplementation'
-import { GrenacheClientCallOptions } from '../client/CallOptions'
+import { SubscriptionManager } from './events/SubscriptionManager'
 import { WorkerNameType } from '../WorkerNameType'
-import { EncapsulatedWorkerClient } from '../client/EncapsulatedWorkerClient'
 
 
 // Todo: Sync runner check all implementations
@@ -22,8 +21,7 @@ export class Worker {
   public syncRunner = new SyncRunner();
   public config: GrenacheServerConfig;
   constructor(public worker: WorkerImplementation, config: Partial<GrenacheServerConfig> = {}) {
-    this.config = Object.assign({}, defaultGrenacheServerConfig, config)
-    this.worker.runner = this;
+    this.config = Object.assign({}, defaultGrenacheServerConfig(), config)
   }
 
   /**
@@ -34,8 +32,12 @@ export class Worker {
     this.gClient.start()
     await this.initServer();
 
+    this.worker.runner = this;
+    this.worker.subscriptions = new SubscriptionManager(this.gClient)
+
     this._syncThrottleNotImplementedWarn();
     await sleep(100); // Wait until the server is announced on Grape
+    await this.subscribeToEvents()
   }
 
   private async initServer() {
@@ -105,6 +107,12 @@ export class Worker {
         if (!n.endsWith('Sync')) return
         console.warn(n, "Sync throttle rate limited not implemented in this worker version. Use this.syncRunner.");
       })
+  }
+
+  public async subscribeToEvents() {
+    for (const sub of this.worker.eventSubscriptions) {
+      await this.gClient.call(sub.workerName, '_subscribeToEvents', [this.config.name, sub.events])
+    }
   }
 
   /**

@@ -22,9 +22,15 @@ export interface GrenacheServerConfig {
     callbackSupport: boolean
   }
   
-export const defaultGrenacheServerConfig: GrenacheServerConfig = {
-  grapeUrl: 'http://127.0.0.1:30001',
-  port: Math.ceil(Math.random() * 10000 + 30000),
-  name: `worker:pinotNoir${Math.ceil(Math.random() * 100000)}`,
-  callbackSupport: false
+/**
+ * Needs to be a function because it needs to generate a random port and name on every call.
+ * @returns Default configuration for a grenache server.
+ */
+export function defaultGrenacheServerConfig(): GrenacheServerConfig {
+  return {
+    grapeUrl: 'http://127.0.0.1:30001',
+    port: Math.ceil(Math.random() * 55500 + 10000),
+    name: `worker:pinotNoir${Math.ceil(Math.random() * 1000000)}`,
+    callbackSupport: false
+  }
 }

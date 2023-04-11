@@ -3,19 +3,16 @@
 This module is the base class that all microservice workers in Blocktank use. It is written in Typescript but can also be used with javascript.
 
 
-## Usage
-
 ```bash
 npm i git+https://github.com/SeverinAlexB/blocktank-worker.git#typescript
 ```
 
-### Worker
+## Worker
 
 A Worker consists of 
 * a server that listens on method calls.
 * a client that can call other servers.
 
-It is the class you will be using the most.
 
 ```typescript
 import { Worker, WorkerImplementation } from 'blocktank-worker';
@@ -39,28 +36,34 @@ class MyFirstWorkerImplemetation extends WorkerImplementation {
 const runner = new Worker(new MyFirstWorkerImplemetation(), {
     name: 'worker:MyFirstWorker'
 })
-await runner.start();
+try {
+    await runner.start();
+    await ctrlC()
+} finally {
+    await runner.stop()
+}
+
 ```
 
-#### Class WorkerImplementation
+### Class WorkerImplementation
 
 * Supports, async and sync and callback functions.
     * If callback functions are used, initialize the Worker with `callbackSupport: true`.
 * Automatically returns `Error`s.
 
-**client**: `GrenacheClient` to call other workers.
+**client** *GrenacheClient* to call other workers.
 
 
-#### Class Worker
+### Class Worker
 
 **constructor(worker, config?)**
 
-* `worker` <WorkerImplementation>
-* `config?` <GrenacheServerConfig>
-    * `name` <string> Name of the worker. Announced on DHT. Must start with `worker:`. Default: Random name like `worker:pinotNoir92703`.
-    * `grapeUrl?` <string> URL to the grape DHT. Default: `http://127.0.0.1:30001`.
-    * `port?` <integer> Server port. Default: Random port between 10,000 and 40,000.
-    * `callbackSupport` <boolean> Allows WorkerImplementation functions to be written with callbacks. Disables the method argument count check. Default: false
+* `worker`: *WorkerImplementation*
+* `config?` *GrenacheServerConfig*
+    * `name?` *string* Name of the worker. Announced on DHT. Must start with `worker:`. Default: Random name.
+    * `grapeUrl?` *string* URL to the grape DHT. Default: `http://127.0.0.1:30001`.
+    * `port?` *integer* Server port. Default: Random port between 10,000 and 40,000.
+    * `callbackSupport?` *boolean* Allows WorkerImplementation functions to be written with callbacks. Disables the method argument count check. Default: false
 
 **async start()** Starts the worker. Listens on given port.
 
@@ -70,13 +73,14 @@ await runner.start();
 
 
 
-### Client
+## Client
 
 `GrenacheClient` allows you to call other workers without exposing your own methods.
 
 ```typescript
 import { GrenacheClient } from 'blocktank-worker'
 const client = new GrenaceClient()
+client.start()
 
 // Method 1 - Call function
 const method = 'helloWorld';
@@ -90,8 +94,33 @@ const response2 = await myFirstWorker.helloWorld('Sepp', 'Pirmin')
 console.log(response2) // Hello Sepp and Pirmin
 ```
 
+### Class GrenacheClient
+
+**constructor(grapeUrl?)**
+
+* `grapeUrl` *string* URL to the DHT. Default: `http://127.0.0.1:30001`.
+
+**start()** Start DHT connection.
+
+**stop()** Stop DHT connection.
 
 
+**async call(workerName, method, args?, opts?)** call method of another worker. Returns the worker response.
+
+* `workerName` *string* Name of the worker you want to call.
+* `method` *string* Method name you want to call.
+* `args?` *any[]* List of arguments. Default: [].
+* `opts?`: *GrenacheClientCallOptions*
+    * `timeoutMs` Request timeout in milliseconds. Default: 60,000.
+
+**encapsulateWorker(workerName)** Conveninence wrapper. Returns a worker object that can be called with any worker method.
+
+```typescript
+// Example
+const worker = client.encapsulateWorker('worker:MyFirstWorker')
+const response = await worker.helloWorld('Sepp')
+// Hello Sepp
+```
 
 ## Development
 

@@ -5,7 +5,7 @@ const Link = require('grenache-nodejs-link')
 const { PeerRPCServer } = require('grenache-nodejs-http')
 
 /**
- * Server to expose methods to other services.
+ * Server to expose methods to other workers.
  */
 export class GrenacheServer {
   public peer: typeof PeerRPCServer;

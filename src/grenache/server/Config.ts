@@ -10,7 +10,7 @@ export interface GrenacheServerConfig {
      */
     port: number,
     /**
-     * Name of the service. Default: Random name.
+     * Name of the worker. Default: Random name.
      */
     name: WorkerNameType,
 

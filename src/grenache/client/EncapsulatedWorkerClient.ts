@@ -6,7 +6,7 @@ import { GrenacheClient } from "./Client";
 /**
  * Helper class to encapsulate a service name and a client.
  */
-export class EncapsulatedServiceClient {
+export class EncapsulatedWorkerClient {
     constructor(public serviceName: WorkerNameType, public client: GrenacheClient) {}
 
     async call(method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}): Promise<any> {
@@ -14,7 +14,7 @@ export class EncapsulatedServiceClient {
     }
 
     static construct(serviceName: WorkerNameType, client: GrenacheClient): any {
-        const encapsulated = new EncapsulatedServiceClient(serviceName, client);
+        const encapsulated = new EncapsulatedWorkerClient(serviceName, client);
         return allowAllFunctions(encapsulated);
     }
 }
@@ -24,9 +24,9 @@ export class EncapsulatedServiceClient {
  * @param service 
  * @returns 
  */
-function allowAllFunctions(service: EncapsulatedServiceClient) {
+function allowAllFunctions(service: EncapsulatedWorkerClient) {
     let handler = {
-        get(target: EncapsulatedServiceClient, functionName: string) {
+        get(target: EncapsulatedWorkerClient, functionName: string) {
             return function (...args: any[]) {
                 return target.call(functionName, args)
             };

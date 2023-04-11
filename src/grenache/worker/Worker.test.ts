@@ -32,7 +32,7 @@ describe('Worker', () => {
         const runner = new Worker(worker);
         try {
             await runner.start();
-            await runner.call(runner.config.name, 'undefinedMethod');
+            await runner.gClient.call(runner.config.name, 'undefinedMethod');
             expect(false).toBe(true);
         } catch (e) {
             expect(e).toBeInstanceOf(Error)
@@ -46,7 +46,7 @@ describe('Worker', () => {
         const runner = new Worker(worker);
         try {
             await runner.start();
-            await runner.call(runner.config.name, 'method', ['Sepp', 'Primin']);
+            await runner.gClient.call(runner.config.name, 'method', ['Sepp', 'Primin']);
         } catch (e) {
             expect(e).toBeInstanceOf(Error)
         } finally {
@@ -59,7 +59,7 @@ describe('Worker', () => {
         const runner = new Worker(worker, {callbackSupport: true});
         try {
             await runner.start();
-            const response = await runner.call(runner.config.name, 'methodCallback', ['Sepp']);
+            const response = await runner.gClient.call(runner.config.name, 'methodCallback', ['Sepp']);
             expect(response).toEqual('hello Sepp');
         } catch (e) {
             expect(e).toBeInstanceOf(GrenacheClientCallError)
@@ -74,7 +74,7 @@ describe('Worker', () => {
         const runner = new Worker(worker);
         try {
             await runner.start();
-            await runner.call(runner.config.name, 'sleep', [], { timeoutMs: 1000 });
+            await runner.gClient.call(runner.config.name, 'sleep', [], { timeoutMs: 1000 });
             expect(false).toBe(true);
         } catch (e) {
             expect(e).toBeInstanceOf(GrenacheClientCallError)
@@ -90,7 +90,7 @@ describe('Worker', () => {
         await runner.start();
         await runner.stop()
         try {
-            await runner.call(runner.config.name, 'undefienedMethod');
+            await runner.gClient.call(runner.config.name, 'undefienedMethod');
             expect(false).toBe(true);
         } catch (e) {
             expect(e).toBeInstanceOf(GrenacheClientCallError)
@@ -105,11 +105,11 @@ describe('Worker', () => {
         const runner = new Worker(worker);
         await runner.start();
         try {
-            await runner.call('worker:UnknownWorker', 'undefienedMethod');
+            await runner.gClient.call('worker:UnknownWorker', 'undefienedMethod');
             expect(false).toBe(true);
         } catch (e) {
             expect(e).toBeInstanceOf(GrenacheClientCallError)
-            expect((e as GrenacheClientCallError).code).toEqual(GrenacheClientCallErrorCodes.SERVICE_NOT_FOUND)
+            expect((e as GrenacheClientCallError).code).toEqual(GrenacheClientCallErrorCodes.WORKER_NOT_FOUND)
         } finally {
             await runner.stop()
         }

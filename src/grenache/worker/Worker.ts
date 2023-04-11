@@ -8,13 +8,13 @@ import { sleep } from '../../utils'
 import { WorkerImplementation } from './WorkerImplementation'
 import { GrenacheClientCallOptions } from '../client/CallOptions'
 import { WorkerNameType } from '../WorkerNameType'
-import { EncapsulatedServiceClient } from '../client/EncapsulatedServiceClient'
+import { EncapsulatedWorkerClient } from '../client/EncapsulatedWorkerClient'
 
 
 // Todo: Sync runner check all implementations
 
 /**
- * Combines the server and client to run a service.
+ * Combines the server and client to run a worker.
  */
 export class Worker {
   public gClient: GrenacheClient;
@@ -30,9 +30,8 @@ export class Worker {
    * Start listening for requests
    */
   public async start() {
-
     this.gClient = new GrenacheClient(this.config.grapeUrl)
-    this.gClient.init()
+    this.gClient.start()
     await this.initServer();
 
     this._syncThrottleNotImplementedWarn();
@@ -109,7 +108,7 @@ export class Worker {
   }
 
   /**
-   * Shut down the service gracefully.
+   * Shut down the worker gracefully.
    */
   async stop() {
     this.gClient.stop();

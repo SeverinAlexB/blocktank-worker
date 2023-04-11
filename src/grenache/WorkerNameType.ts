@@ -1,4 +1,4 @@
 /**
- * Type of a service name. Enforces the srv: prefix.
+ * Type of a worker name. Enforces the worker: prefix.
  */
 export type WorkerNameType = `worker:${string}`

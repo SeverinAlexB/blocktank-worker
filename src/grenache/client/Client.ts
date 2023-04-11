@@ -4,14 +4,14 @@ import { defaultGrenacheServerConfig } from "../server/Config";
 import { MethodCallOptions } from "../server/MethodCallOptions";
 import GrenacheClientCallError, { GrenacheClientCallErrorCodes } from "./CallError";
 import { defaultGrenacheClientCallOptions, GrenacheClientCallOptions } from "./CallOptions";
-import { EncapsulatedServiceClient } from "./EncapsulatedServiceClient";
+import { EncapsulatedWorkerClient } from "./EncapsulatedWorkerClient";
 
 const Link = require('grenache-nodejs-link')
 const { PeerRPCClient } = require('grenache-nodejs-http')
 
 
 /**
- * Client to call other services.
+ * Client to call other workers.
  */
 export class GrenacheClient {
   public peer: typeof PeerRPCClient;
@@ -27,18 +27,18 @@ export class GrenacheClient {
   /**
    * Start DHT connection.
    */
-  init() {
+  public start() {
     this.link.start()
     this.peer.init()
   }
 
 
   /**
-   * Call another services.
+   * Call another worker.
    * @param params 
    * @returns 
    */
-  call(serviceName: WorkerNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}): Promise<any> {
+  call(workerName: WorkerNameType, method: string, args: any[] = [], opts: Partial<GrenacheClientCallOptions> = {}): Promise<any> {
     opts = Object.assign({}, defaultGrenacheClientCallOptions, opts)
 
     const params: MethodCallOptions = {
@@ -47,7 +47,7 @@ export class GrenacheClient {
     }
 
     return new Promise((resolve, reject) => {
-      this.peer.request(serviceName, params, { timeout: opts.timeoutMs }, (err: any, data: any) => {
+      this.peer.request(workerName, params, { timeout: opts.timeoutMs }, (err: any, data: any) => {
         if (!err) {
           resolve(data)
         }
@@ -57,9 +57,9 @@ export class GrenacheClient {
           return reject(err); // Other type of error, throw directly
         }
         if (err.message.includes('ERR_GRAPE_LOOKUP_EMPTY')) {
-          return reject(new GrenacheClientCallError(GrenacheClientCallErrorCodes.SERVICE_NOT_FOUND, 'Cannot find service. ' + err.message))
+          return reject(new GrenacheClientCallError(GrenacheClientCallErrorCodes.WORKER_NOT_FOUND, 'Cannot find worker. ' + err.message))
         } else if (err.message.includes('ESOCKETTIMEDOUT')) {
-          return reject(new GrenacheClientCallError(GrenacheClientCallErrorCodes.ESOCKETTIMEDOUT, 'Timeout calling service. ' + err.message))
+          return reject(new GrenacheClientCallError(GrenacheClientCallErrorCodes.ESOCKETTIMEDOUT, 'Timeout calling worker. ' + err.message))
         } else if (err.message.includes('ERR_REQUEST_GENERIC')) {
           return reject(new GrenacheClientCallError(GrenacheClientCallErrorCodes.ERR_REQUEST_GENERIC, 'Timeout calling. ' + err.message))
         }
@@ -78,7 +78,7 @@ export class GrenacheClient {
  * @returns Worker object
  */
   encapsulateWorker(name: WorkerNameType) {
-    return EncapsulatedServiceClient.construct(name, this);
+    return EncapsulatedWorkerClient.construct(name, this);
   }
 
 

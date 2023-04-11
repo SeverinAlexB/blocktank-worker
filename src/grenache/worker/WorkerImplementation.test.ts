@@ -39,7 +39,7 @@ describe('WorkerImplementation', () => {
         const runner = new Worker(new TestImplementation());
         try {
             await runner.start();
-            const response = await runner.call(runner.config.name, 'syncMethod', ['Sepp']);
+            const response = await runner.gClient.call(runner.config.name, 'syncMethod', ['Sepp']);
             expect(response).toBe('hello Sepp');
         } finally {
             await runner.stop()
@@ -51,7 +51,7 @@ describe('WorkerImplementation', () => {
         try {
             await runner.start();
             await sleep(1000)
-            await runner.call(runner.config.name, 'syncMethodError', ['Sepp']);
+            await runner.gClient.call(runner.config.name, 'syncMethodError', ['Sepp']);
             expect(true).toBe(false);
         } catch (e) {
             expect(e.message).toEqual('Hello Sepp')
@@ -64,7 +64,7 @@ describe('WorkerImplementation', () => {
         const runner = new Worker(new TestImplementation());
         try {
             await runner.start();
-            const response = await runner.call(runner.config.name, 'asyncMethod', ['Sepp']);
+            const response = await runner.gClient.call(runner.config.name, 'asyncMethod', ['Sepp']);
             expect(response).toBe('hello Sepp');
         } finally {
             await runner.stop()
@@ -76,7 +76,7 @@ describe('WorkerImplementation', () => {
         try {
             await runner.start();
             await sleep(1000)
-            await runner.call(runner.config.name, 'asyncMethodError', ['Sepp']);
+            await runner.gClient.call(runner.config.name, 'asyncMethodError', ['Sepp']);
             expect(true).toBe(false);
         } catch (e) {
             expect(e.message).toEqual('Hello Sepp')
@@ -89,7 +89,7 @@ describe('WorkerImplementation', () => {
         const runner = new Worker(new TestImplementation(), {callbackSupport: true});
         try {
             await runner.start();
-            const response = await runner.call(runner.config.name, 'callbackMethod', ['Sepp']);
+            const response = await runner.gClient.call(runner.config.name, 'callbackMethod', ['Sepp']);
             expect(response).toBe('hello Sepp');
         } finally {
             await runner.stop()
@@ -101,7 +101,7 @@ describe('WorkerImplementation', () => {
         try {
             await runner.start();
             await sleep(1000)
-            await runner.call(runner.config.name, 'callbackMethodError', ['Sepp']);
+            await runner.gClient.call(runner.config.name, 'callbackMethodError', ['Sepp']);
             expect(true).toBe(false);
         } catch (e) {
             expect(e.message).toEqual('Hello Sepp')
@@ -110,7 +110,7 @@ describe('WorkerImplementation', () => {
         }
     });
 
-    test('encapsulated service', async () => {
+    test('encapsulated worker', async () => {
         const runner = new Worker(new TestImplementation());
         try {
             await runner.start();

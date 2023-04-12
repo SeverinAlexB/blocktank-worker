@@ -1,7 +1,7 @@
 import { WorkerNameType } from "../../WorkerNameType";
 import { GrenacheClient } from "../../client/Client";
 
-export class EventSubscription {
+export class BlocktankListener {
     public lastSuccessfulCall: Date = new Date() // Persist?
     constructor(public workerName: WorkerNameType, public events: string[]) {}
 

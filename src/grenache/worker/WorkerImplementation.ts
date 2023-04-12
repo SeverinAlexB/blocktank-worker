@@ -1,7 +1,8 @@
 import { WorkerNameType } from "../WorkerNameType"
 import { GrenacheClient } from "../client/Client"
 import { Worker } from "./Worker"
-import { EventSubscription } from "./events/EventSubscription"
+import { BlocktankListener } from "./events/EventSubscription"
+import { BlocktankSubscription } from "./events/BlocktankSubscription"
 import { SubscriptionManager } from "./events/SubscriptionManager"
 
 /**
@@ -12,23 +13,6 @@ import { SubscriptionManager } from "./events/SubscriptionManager"
 export class WorkerImplementation {
   public runner: Worker // Set by the Worker class
   public subscriptions: SubscriptionManager // Set by the Worker class
-
-  eventSubscriptions: EventSubscription[] = []
-
-  constructor() {
-    const prototype = Object.getPrototypeOf(this)
-    const registeredEvents = prototype['registeredEvents'] || []
-    console.log('constructor', registeredEvents)
-  }
-
-  private extractDecoratorEventSubscriptions() {
-    const prototype = Object.getPrototypeOf(this)
-    const registeredEvents = prototype['registeredEvents'] || []
-    console.log('extractEventSubscriptions', registeredEvents)
-    return registeredEvents.map((event: any) => {
-      return new EventSubscription(event.workerName, [event.eventName])
-    })
-  }
 
   get name(): string {
     return this.runner.config.name

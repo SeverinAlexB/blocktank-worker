@@ -12,7 +12,7 @@ import { EventManager } from "./events/Manager"
  */
 export class WorkerImplementation {
   public runner: Worker // Set by the Worker class
-  public events: EventManager // Set by the Worker class
+
 
 
   main(): any {

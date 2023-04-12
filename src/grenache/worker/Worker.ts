@@ -19,11 +19,11 @@ export class Worker {
   public gServer: GrenacheServer;
   public syncRunner = new SyncRunner();
   public config: GrenacheServerConfig;
+  public events: EventManager = new EventManager()
 
   constructor(public implementation: WorkerImplementation, config: Partial<GrenacheServerConfig> = {}) {
     this.config = Object.assign({}, defaultGrenacheServerConfig(), config)
     this.implementation.runner = this;
-    this.implementation.events = new EventManager()
 
     this.gClient = new GrenacheClient(this.config.grapeUrl)
     this.gServer = new GrenacheServer(this.config)
@@ -35,11 +35,11 @@ export class Worker {
   public async start() {
     this.gClient.start()
     await this.initServer();
-    this.implementation.events.init(this)
+    this.events.init(this)
 
     this._syncThrottleNotImplementedWarn();
     await sleep(100); // Wait until the server is announced on Grape
-    await this.implementation.events.initializeListeners()
+    await this.events.initializeListeners()
   }
 
   private async initServer() {
@@ -63,13 +63,13 @@ export class Worker {
     if (request.method === '__subscribeToEvents') {
       const workerName = request.args[0];
       const names = request.args[1];
-      return this.implementation.events.registerEmitter(workerName, names)
+      return this.events.registerEmitter(workerName, names)
     }
     return false
   }
 
   private async processEvent(request: MethodCallOptions) {
-    return await this.implementation.events.processEvent(request.sourceWorkerName, request.method, request.args)
+    return await this.events.processEvent(request.sourceWorkerName, request.method, request.args)
   }
 
   /**

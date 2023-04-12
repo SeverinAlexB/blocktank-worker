@@ -10,7 +10,6 @@ export class EventManager {
     public emitters: BlocktankEventEmitter[] = [] // We emit these events
     public listeners: BlocktankEventListener[] = [] // We listen to these events
 
-
     public init(worker: Worker) {
         this.worker = worker
         this._extractDecoratoredListeners()

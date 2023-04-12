@@ -8,7 +8,6 @@ const serverWorkerName: WorkerNameType = `worker:server${Math.random().toString(
 
 class ServerImplementation extends WorkerImplementation {}
 
-
 class ListenerImplementation extends WorkerImplementation {
     @SubscribeToBlocktankEvent(serverWorkerName, 'invoicePaid')
     async invoicePaidEvent(param: string) {
@@ -21,7 +20,7 @@ class ListenerImplementation extends WorkerImplementation {
 jest.setTimeout(60*1000)
 
 
-describe('EventSubscription', () => {
+describe('EventManger', () => {
     test('EventDecorator registered internally', async () => {
         const implementation = new ListenerImplementation()
         const worker = new Worker(implementation);

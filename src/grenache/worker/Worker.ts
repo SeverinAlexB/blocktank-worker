@@ -1,12 +1,12 @@
 import { GrenacheServer } from '../server/Server'
 import { GrenacheClient } from '../client/Client'
 
-import { GrenacheServerConfig, defaultGrenacheServerConfig } from '../server/Config'
 import { SyncRunner } from '../../utils/SyncRunner'
 import { MethodCallOptions } from '../server/MethodCallOptions'
 import { sleep } from '../../utils'
 import { WorkerImplementation } from './WorkerImplementation'
 import { EventManager } from './events/Manager'
+import { BlocktankWorkerConfig, defaultBlocktankWorkerConfig } from './Config'
 
 
 // Todo: Sync runner check all implementations
@@ -18,11 +18,11 @@ export class Worker {
   public gClient: GrenacheClient;
   public gServer: GrenacheServer;
   public syncRunner = new SyncRunner();
-  public config: GrenacheServerConfig;
+  public config: BlocktankWorkerConfig;
   public events: EventManager = new EventManager()
 
-  constructor(public implementation: WorkerImplementation, config: Partial<GrenacheServerConfig> = {}) {
-    this.config = Object.assign({}, defaultGrenacheServerConfig(), config)
+  constructor(public implementation: WorkerImplementation, config: Partial<BlocktankWorkerConfig> = {}) {
+    this.config = Object.assign({}, defaultBlocktankWorkerConfig(), config)
     this.implementation.runner = this;
 
     this.gClient = new GrenacheClient(this.config.grapeUrl)
@@ -55,7 +55,7 @@ export class Worker {
   }
 
   /**
-   * Process any internal method calls that should not go to the actual WorkerImplementation
+   * Process any internal method calls that should not go to the actual WorkerImplementation. Special methods start with __.
    * @param request 
    * @returns 
    */
@@ -68,10 +68,6 @@ export class Worker {
     return false
   }
 
-  private async processEvent(request: MethodCallOptions) {
-    return await this.events.processEvent(request.sourceWorkerName, request.method, request.args)
-  }
-
   /**
  * Calls the method in this worker. Supports sync, async, and callback methods.
  * @param request 
@@ -81,7 +77,7 @@ export class Worker {
     const method = request.method || 'main';
 
     if (request.isEvent) {
-      return await this.processEvent(request)
+      return await this.events.processEvent(request.sourceWorkerName, request.method, request.args)
     }
 
     if (method.startsWith('__')) {

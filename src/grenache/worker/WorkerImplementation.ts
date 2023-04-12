@@ -14,22 +14,6 @@ export class WorkerImplementation {
   public runner: Worker // Set by the Worker class
   public subscriptions: SubscriptionManager // Set by the Worker class
 
-  get name(): string {
-    return this.runner.config.name
-  }
-
-  get client(): GrenacheClient {
-    return this.runner.gClient
-  }
-
-  _subscribeToEvents(workerName: WorkerNameType, names: string[]) {
-    this.subscriptions.addSubscription(workerName, names)
-    return true
-  }
-
-  async _emitEvent(eventName: string, args: any[]) {
-    await this.subscriptions.call(eventName, args)
-  }
 
   main(): any {
     throw new Error('main() method called without implementation.')

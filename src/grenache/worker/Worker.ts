@@ -19,6 +19,7 @@ export class Worker {
   public gServer: GrenacheServer;
   public syncRunner = new SyncRunner();
   public config: GrenacheServerConfig;
+
   constructor(public implementation: WorkerImplementation, config: Partial<GrenacheServerConfig> = {}) {
     this.config = Object.assign({}, defaultGrenacheServerConfig(), config)
     this.implementation.runner = this;
@@ -42,7 +43,6 @@ export class Worker {
   }
 
   private async initServer() {
-
     this.gServer.init();
     this.gServer.service.on('request', async (peerId: any, service: any, payload: any, handler: any) => {
       try {
@@ -55,12 +55,38 @@ export class Worker {
   }
 
   /**
+   * Process any internal method calls that should not go to the actual WorkerImplementation
+   * @param request 
+   * @returns 
+   */
+  private async processSpecialMethod(request: MethodCallOptions): Promise<boolean> {
+    if (request.method === '__subscribeToEvents') {
+      const workerName = request.args[0];
+      const names = request.args[1];
+      return this.implementation.subscriptions.addSubscription(workerName, names)
+    }
+    return false
+  }
+
+  private async processEvent(request: MethodCallOptions) {
+    return await this.implementation.subscriptions.processEvent(request.sourceWorkerName, request.method, request.args)
+  }
+
+  /**
  * Calls the method in this worker. Supports sync, async, and callback methods.
  * @param request 
  * @returns Method result
  */
-  private async callMethod(request: MethodCallOptions): Promise<any> {
+  public async callMethod(request: MethodCallOptions): Promise<any> {
     const method = request.method || 'main';
+
+    if (request.isEvent) {
+      return await this.processEvent(request)
+    }
+
+    if (method.startsWith('__')) {
+      return await this.processSpecialMethod(request)
+    }
 
     const func = (this.implementation as any)[method];
     if (!func) {

@@ -24,13 +24,22 @@ export class SubscriptionManager {
     public addSubscription(workerName: WorkerNameType, names: string[]) {
         const sub = new BlocktankListener(workerName, names)
         this.listeners.push(sub)
+        return true
     }
 
-    async call(eventName: string, args: any[]) {
+    async emitEvent(eventName: string, args: any[]) {
         const targetSubscriptions = this.listeners.filter(sub => sub.events.includes(eventName))
 
         for (const sub of targetSubscriptions) {
-            await sub.call(this.worker.gClient, eventName, args)
+            await sub.call(this.worker.gClient, eventName, args, this.worker.config.name)
+        }
+    }
+
+    async processEvent(workerName: WorkerNameType, eventName: string, args: any[]) {
+        const targetSubscriptions = this.subscriptions.filter(sub => sub.eventName === eventName && sub.workerName === workerName)
+
+        for (const sub of targetSubscriptions) {
+            return await sub.call(this.worker.implementation, args)
         }
     }
 
@@ -45,7 +54,7 @@ export class SubscriptionManager {
 
         for (const subs of workerSubs.values()) {
             const eventNames = subs.map(listener => listener.eventName)
-            await this.worker.gClient.call(subs[0].workerName, '_subscribeToEvents', [this.worker.config.name, eventNames])
+            await this.worker.gClient.call(subs[0].workerName, '__subscribeToEvents', [this.worker.config.name, eventNames])
         }
     }
 }

@@ -1,13 +1,16 @@
 import { WorkerImplementation } from "../WorkerImplementation";
 import { Worker } from "../Worker";
 import {SubscribeToBlocktankEvent} from './EventDecorator'
+import { WorkerNameType } from "../../WorkerNameType";
 
 
-class ServerImplementation extends WorkerImplementation {
-}
+const serverWorkerName: WorkerNameType = `worker:server${Math.random().toString(36).substring(7)}` // Making the server name more generic so the DHT doesnt clash.
+
+class ServerImplementation extends WorkerImplementation {}
+
 
 class ListenerImplementation extends WorkerImplementation {
-    @SubscribeToBlocktankEvent('worker:server', 'invoicePaid')
+    @SubscribeToBlocktankEvent(serverWorkerName, 'invoicePaid')
     async invoicePaidEvent(param: string) {
         console.log('invoicePaid', param)
         return true
@@ -28,7 +31,7 @@ describe('EventSubscription', () => {
             expect(implementation.subscriptions.subscriptions.length).toEqual(1)
             const listener = implementation.subscriptions.subscriptions[0]
             expect(listener.eventName).toEqual('invoicePaid')
-            expect(listener.workerName).toEqual('worker:server')
+            expect(listener.workerName).toEqual(serverWorkerName)
             expect(listener.propertyKey).toEqual('invoicePaidEvent')
         } finally {
             await worker.stop()
@@ -42,35 +45,54 @@ describe('EventSubscription', () => {
         try {
             await worker.start()
             expect(worker.gClient.call).toHaveBeenCalled()
-            expect(worker.gClient.call).toHaveBeenLastCalledWith('worker:server', '_subscribeToEvents', [worker.config.name, ['invoicePaid']])
+            expect(worker.gClient.call).toHaveBeenLastCalledWith(serverWorkerName, '__subscribeToEvents', [worker.config.name, ['invoicePaid']])
         } finally {
             await worker.stop()
         }
     });
 
-    test('Event notification', async () => {
+    test('Register listener on server', async () => {
+        const implementation = new ServerImplementation()
+        const worker = new Worker(implementation);
+        jest.spyOn(worker.gClient, 'call').mockImplementation(async (_) => true);
+        try {
+            await worker.start()
+            const response = await worker.callMethod({
+                method: '__subscribeToEvents',
+                args: ['worker:client', ['invoicePaid']]
+            })
+            expect(response).toEqual(true)
+            expect(implementation.subscriptions.listeners.length).toEqual(1)
+            const listener = implementation.subscriptions.listeners[0]
+            expect(listener.workerName).toEqual('worker:client')
+            expect(listener.events[0]).toEqual('invoicePaid')
+        } finally {
+            await worker.stop()
+        }
+    });
+
+    test('Server<>Client event interaction', async () => {
         const serverImplementation = new ServerImplementation()
         const server = new Worker(serverImplementation, {
-            name: 'worker:server',
-            callbackSupport: true // Spies dont like argument length check. So we need to disable it.
+            name: serverWorkerName
         });
 
         const listenerImplementation = new ListenerImplementation()
-        const listener = new Worker(listenerImplementation, {
-            callbackSupport: true // Spies dont like argument length check. So we need to disable it.
+        const client = new Worker(listenerImplementation, {
+            callbackSupport: true
         });
+        jest.spyOn(listenerImplementation, 'invoicePaidEvent')
         try {
-            jest.spyOn(serverImplementation, '_subscribeToEvents')
             await server.start();
-            await listener.start()
-            expect(serverImplementation._subscribeToEvents).toHaveBeenCalled()
+            await client.start()
 
-            // jest.spyOn(listenerImplementation, 'invoicePaid');
-            // await serverImplementation._emitEvent('invoicePaid', ['test'])
-            // expect(listenerImplementation.invoicePaid).toHaveBeenCalled()
+            expect(serverImplementation.subscriptions.listeners.length).toEqual(1)
+
+            await serverImplementation.subscriptions.emitEvent('invoicePaid', ['test'])
+            expect(listenerImplementation.invoicePaidEvent).toHaveBeenCalled()
         } finally {
             await server.stop()
-            await listener.stop()
+            await client.stop()
         }
     });
 

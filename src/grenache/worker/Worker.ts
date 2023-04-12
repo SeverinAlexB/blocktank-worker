@@ -6,7 +6,7 @@ import { SyncRunner } from '../../utils/SyncRunner'
 import { MethodCallOptions } from '../server/MethodCallOptions'
 import { sleep } from '../../utils'
 import { WorkerImplementation } from './WorkerImplementation'
-import { SubscriptionManager } from './events/SubscriptionManager'
+import { EventManager } from './events/Manager'
 
 
 // Todo: Sync runner check all implementations
@@ -23,7 +23,7 @@ export class Worker {
   constructor(public implementation: WorkerImplementation, config: Partial<GrenacheServerConfig> = {}) {
     this.config = Object.assign({}, defaultGrenacheServerConfig(), config)
     this.implementation.runner = this;
-    this.implementation.subscriptions = new SubscriptionManager()
+    this.implementation.events = new EventManager()
 
     this.gClient = new GrenacheClient(this.config.grapeUrl)
     this.gServer = new GrenacheServer(this.config)
@@ -35,11 +35,11 @@ export class Worker {
   public async start() {
     this.gClient.start()
     await this.initServer();
-    this.implementation.subscriptions.init(this)
+    this.implementation.events.init(this)
 
     this._syncThrottleNotImplementedWarn();
     await sleep(100); // Wait until the server is announced on Grape
-    await this.implementation.subscriptions.initializeSubscriptions()
+    await this.implementation.events.initializeListeners()
   }
 
   private async initServer() {
@@ -63,13 +63,13 @@ export class Worker {
     if (request.method === '__subscribeToEvents') {
       const workerName = request.args[0];
       const names = request.args[1];
-      return this.implementation.subscriptions.addSubscription(workerName, names)
+      return this.implementation.events.registerEmitter(workerName, names)
     }
     return false
   }
 
   private async processEvent(request: MethodCallOptions) {
-    return await this.implementation.subscriptions.processEvent(request.sourceWorkerName, request.method, request.args)
+    return await this.implementation.events.processEvent(request.sourceWorkerName, request.method, request.args)
   }
 
   /**

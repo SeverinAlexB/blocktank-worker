@@ -1,9 +1,9 @@
 import { WorkerNameType } from "../WorkerNameType"
 import { GrenacheClient } from "../client/Client"
 import { Worker } from "./Worker"
-import { BlocktankListener } from "./events/EventSubscription"
-import { BlocktankSubscription } from "./events/BlocktankSubscription"
-import { SubscriptionManager } from "./events/SubscriptionManager"
+import { BlocktankEventEmitter } from "./events/Emitter"
+import { BlocktankEventListener } from "./events/Listener"
+import { EventManager } from "./events/Manager"
 
 /**
  * Base class for all worker implementations.
@@ -12,7 +12,7 @@ import { SubscriptionManager } from "./events/SubscriptionManager"
  */
 export class WorkerImplementation {
   public runner: Worker // Set by the Worker class
-  public subscriptions: SubscriptionManager // Set by the Worker class
+  public events: EventManager // Set by the Worker class
 
 
   main(): any {

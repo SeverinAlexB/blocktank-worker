@@ -1,7 +1,10 @@
 import { WorkerNameType } from "../../WorkerNameType";
 import { WorkerImplementation } from "../WorkerImplementation";
 
-export class BlocktankSubscription {
+/**
+ * Connects a registered event with the method that is being called in case this event is received.
+ */
+export class BlocktankEventListener {
     workerName: WorkerNameType;
     eventName: string;
     propertyKey: string;

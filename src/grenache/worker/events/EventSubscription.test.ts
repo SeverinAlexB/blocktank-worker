@@ -1,6 +1,6 @@
 import { WorkerImplementation } from "../WorkerImplementation";
 import { Worker } from "../Worker";
-import {SubscribeToBlocktankEvent} from './EventDecorator'
+import {SubscribeToBlocktankEvent} from './ListenerDecorator'
 import { WorkerNameType } from "../../WorkerNameType";
 
 
@@ -25,11 +25,11 @@ describe('EventSubscription', () => {
     test('EventDecorator registered internally', async () => {
         const implementation = new ListenerImplementation()
         const worker = new Worker(implementation);
-        jest.spyOn(implementation.subscriptions, 'initializeSubscriptions').mockImplementation(async () => {});
+        jest.spyOn(implementation.events, 'initializeListeners').mockImplementation(async () => {});
         try {
             await worker.start()
-            expect(implementation.subscriptions.subscriptions.length).toEqual(1)
-            const listener = implementation.subscriptions.subscriptions[0]
+            expect(implementation.events.listeners.length).toEqual(1)
+            const listener = implementation.events.listeners[0]
             expect(listener.eventName).toEqual('invoicePaid')
             expect(listener.workerName).toEqual(serverWorkerName)
             expect(listener.propertyKey).toEqual('invoicePaidEvent')
@@ -62,8 +62,8 @@ describe('EventSubscription', () => {
                 args: ['worker:client', ['invoicePaid']]
             })
             expect(response).toEqual(true)
-            expect(implementation.subscriptions.listeners.length).toEqual(1)
-            const listener = implementation.subscriptions.listeners[0]
+            expect(implementation.events.emitters.length).toEqual(1)
+            const listener = implementation.events.emitters[0]
             expect(listener.workerName).toEqual('worker:client')
             expect(listener.events[0]).toEqual('invoicePaid')
         } finally {
@@ -86,9 +86,9 @@ describe('EventSubscription', () => {
             await server.start();
             await client.start()
 
-            expect(serverImplementation.subscriptions.listeners.length).toEqual(1)
+            expect(serverImplementation.events.emitters.length).toEqual(1)
 
-            await serverImplementation.subscriptions.emitEvent('invoicePaid', ['test'])
+            await serverImplementation.events.emitEvent('invoicePaid', ['test'])
             expect(listenerImplementation.invoicePaidEvent).toHaveBeenCalled()
         } finally {
             await server.stop()

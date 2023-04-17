@@ -2,8 +2,10 @@ import * as amp from 'amqplib'
 import { RabbitConnectionOptions, defaultRabbitConnectionOptions } from './RabbitConnectionOptions'
 import RabbitEventMessage from './RabbitEventMessage'
 
+/**
+ * A RabbitMQ publisher that publishes events to an exchange called `blocktank.{myWorkerName}.events.`
+ */
 export default class RabbitPublisher {
-
     public connection: amp.Connection
     public channel: amp.Channel
     public options: RabbitConnectionOptions
@@ -15,6 +17,9 @@ export default class RabbitPublisher {
         return `blocktank.${this.myWorkerName}.events`
     }
 
+    /**
+     * Setup connection and create exchange object `blocktank.${this.myWorkerName}.events` on RabbitMq.
+     */
     async init() {
         if (this.options.connection) {
             this.connection = this.options.connection
@@ -35,9 +40,18 @@ export default class RabbitPublisher {
         }
     }
 
+    /**
+     * Publishes an event to RabbitMq
+     * @param eventName Name of the event the consumer can subscribe to.
+     * @param message 
+     * @returns 
+     */
     publish(eventName: string, message: string) {
         const event = new RabbitEventMessage(eventName, message)
-        return this.channel.publish(this.exchangeName, eventName, Buffer.from(event.toJson()))
+        const isBufferFul = this.channel.publish(this.exchangeName, eventName, Buffer.from(event.toJson()))
+        if (isBufferFul) {
+            throw new Error('RabbitMq buffer is full.') // This is just a sanity check. This should never happen hopefully.
+        }
     }
 }
 

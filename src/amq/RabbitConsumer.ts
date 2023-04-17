@@ -24,6 +24,9 @@ export default class RabbitConsumer {
         return `blocktank.${this.myWorkerName}`
     }
 
+    /**
+     * Initialize connection. Creates exchange `blocktank.${this.myWorkerName}.consumers`: This exchange is used to delay messages if needed.
+     */
     async init() {
         if (this.options.connection) {
             this.connection = this.options.connection
@@ -43,6 +46,9 @@ export default class RabbitConsumer {
         this.channel.bindExchange(this.myExchangeName, this.sourceExchangeName, '')
     }
 
+    /**
+     * Stops RabbitMq connection.
+     */
     async stop() {
         await this.channel.close()
         if (!this.options.connection) {
@@ -50,6 +56,12 @@ export default class RabbitConsumer {
         }
     }
 
+    /**
+     * Subscribes to events.
+     * @param eventName Name of the event.
+     * @param callback Callback function that is called when an event is received.
+     * @param options Define a backoff function in case of an error. Default: Exponential backoff.
+     */
     async onMessage(eventName: string, callback: (msg: RabbitEventMessage) => any, options: Partial<RabbitConsumeOptions> = {}) {
         options = Object.assign({}, defaultRabbitConsumeOptions, options)
 
@@ -74,8 +86,8 @@ export default class RabbitConsumer {
                 await callback(event)
                 this.channel.ack(msg)
             } catch (e) {
+                console.error(`Failed to process message ${msg.content.toString()}. Reschedule with delay.`, e)
                 const delayMs = options.backoffFunction(event.attempt)
-                console.error(`Failed to process message ${msg.content.toString()}. Reschedule with ${delayMs}ms delay.`, e)
                 event.attempt++
                 msg.content = Buffer.from(event.toJson())
                 this.requeueAfterError(msg, delayMs)
@@ -88,9 +100,12 @@ export default class RabbitConsumer {
         if (delayMs > 0) {
             headers['x-delay'] = delayMs
         }
-        this.channel.publish(this.myExchangeName, msg.fields.routingKey, msg.content, {
+        const isBufferFul = this.channel.publish(this.myExchangeName, msg.fields.routingKey, msg.content, {
             headers: headers
         })
+        if (isBufferFul) {
+            throw new Error('RabbitMq buffer is full.') // This is just a sanity check. This should never happen hopefully.
+        }
         this.channel.nack(msg, false, false)
     }
 }

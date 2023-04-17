@@ -1,7 +1,7 @@
 
 export interface RabbitConsumeOptions {
     /**
-     * Provide a backoff function to control when the message should be retries in case of an error.
+     * Provide a backoff function to control when the message should be retries in case of an error. Default: Exponential backoff.
      * @param attempt Number of previous attempts. First message is always 0.
      * @returns 
      */

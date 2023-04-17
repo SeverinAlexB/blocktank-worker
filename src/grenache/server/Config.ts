@@ -19,7 +19,9 @@ export interface GrenacheServerConfig {
      * and you MUST call the callback function otherwise the request will timeout.
      * Default: false.
      */
-    callbackSupport: boolean
+    callbackSupport: boolean,
+
+    amqpUrl?: string
   }
   
 /**

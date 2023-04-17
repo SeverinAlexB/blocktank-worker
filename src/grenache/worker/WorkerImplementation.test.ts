@@ -27,7 +27,6 @@ class TestImplementation extends WorkerImplementation {
     callbackMethodError(name: string, callback: (err: any, data?: any) => void) {
         callback(new Error(`Hello ${name}`));
     }
-
 }
 
 

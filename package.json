@@ -13,6 +13,8 @@
   "author": "r32a",
   "license": "MIT",
   "dependencies": {
+    "amqp-retry.node": "^0.3.0",
+    "amqplib": "^0.10.3",
     "async-mutex": "^0.4.0",
     "axios": "^0.26.0",
     "bignumber.js": "^9.0.2",
@@ -23,6 +25,7 @@
     "mongodb": "^4.13.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.1",
     "@types/jest": "^29.2.5",
     "@types/lodash": "^4.14.191",
     "jest": "^29.3.1",

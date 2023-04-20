@@ -35,7 +35,7 @@ export class Worker {
   public async start() {
     this.gClient.start()
     await this.initServer();
-    this.events.init(this)
+    await this.events.init(this)
 
     this._syncThrottleNotImplementedWarn();
     await sleep(100); // Wait until the server is announced on Grape
@@ -55,34 +55,12 @@ export class Worker {
   }
 
   /**
-   * Process any internal method calls that should not go to the actual WorkerImplementation. Special methods start with __.
-   * @param request 
-   * @returns 
-   */
-  private async processSpecialMethod(request: MethodCallOptions): Promise<boolean> {
-    if (request.method === '__subscribeToEvents') {
-      const workerName = request.args[0];
-      const names = request.args[1];
-      return this.events.registerEmitter(workerName, names)
-    }
-    return false
-  }
-
-  /**
  * Calls the method in this worker. Supports sync, async, and callback methods.
  * @param request 
  * @returns Method result
  */
   public async callMethod(request: MethodCallOptions): Promise<any> {
     const method = request.method || 'main';
-
-    if (request.isEvent) {
-      return await this.events.processEvent(request.sourceWorkerName, request.method, request.args)
-    }
-
-    if (method.startsWith('__')) {
-      return await this.processSpecialMethod(request)
-    }
 
     const func = (this.implementation as any)[method];
     if (!func) {

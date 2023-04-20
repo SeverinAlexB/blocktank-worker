@@ -61,10 +61,6 @@ describe('EventManger', () => {
                 args: ['worker:client', ['invoicePaid']]
             })
             expect(response).toEqual(true)
-            expect(worker.events.emitters.length).toEqual(1)
-            const listener = worker.events.emitters[0]
-            expect(listener.workerName).toEqual('worker:client')
-            expect(listener.events[0]).toEqual('invoicePaid')
         } finally {
             await worker.stop()
         }
@@ -84,8 +80,6 @@ describe('EventManger', () => {
         try {
             await server.start();
             await client.start()
-
-            expect(server.events.emitters.length).toEqual(1)
 
             await server.events.emitEvent('invoicePaid', ['test'])
             expect(listenerImplementation.invoicePaidEvent).toHaveBeenCalled()

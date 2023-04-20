@@ -1,9 +1,5 @@
-import { WorkerNameType } from "../WorkerNameType"
-import { GrenacheClient } from "../client/Client"
 import { Worker } from "./Worker"
-import { BlocktankEventEmitter } from "./events/Emitter"
-import { BlocktankEventListener } from "./events/Listener"
-import { EventManager } from "./events/Manager"
+
 
 /**
  * Base class for all worker implementations.

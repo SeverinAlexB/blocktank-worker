@@ -1,20 +1,21 @@
 import * as amp from 'amqplib'
-import { RabbitConnectionOptions, defaultRabbitConnectionOptions } from './RabbitConnectionOptions'
 import { RabbitConsumeOptions, defaultRabbitConsumeOptions } from './RabbitConsumeOptions'
 import RabbitEventMessage from './RabbitEventMessage'
 import { RabbitConsumerOptions, defaultRabbitConsumerOptions } from './RabbitCosumerOptions'
+import { WorkerNameType } from '../grenache/WorkerNameType'
 
+
+/**
+ * A RabbitMQ consumer that consumes events from another worker.
+ * It creates a new exchange `blocktank.{myWorkerName}.consumers` for each worker + a queue `blocktank.{myWorkerName}.{eventName}` for each event.
+ * The exchange + queue will clean up automatically in case the consumer is stopped.
+ */
 export default class RabbitConsumer {
-
     public connection: amp.Connection
     public channel: amp.Channel
     public options: RabbitConsumerOptions
-    constructor(public myWorkerName: string, public sourceWorkerName: string, options: Partial<RabbitConsumerOptions> = {}) {
+    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConsumerOptions> = {}) {
         this.options = Object.assign({}, defaultRabbitConsumerOptions, options)
-     }
-
-    get sourceExchangeName(): string {
-        return `blocktank.${this.sourceWorkerName}.events`
     }
 
     get myExchangeName(): string {
@@ -37,15 +38,6 @@ export default class RabbitConsumer {
             )
         }
         this.channel = await this.connection.createChannel()
-
-        await this.channel.checkExchange(this.sourceExchangeName) // Make sure the source exchange exists
-        await this.channel.assertExchange(this.myExchangeName, 'x-delayed-message', { // Create a new exchange for this consumer that is able to delay messages
-            autoDelete: true,
-            arguments: {
-                'x-delayed-type': 'topic'
-            }
-        })
-        this.channel.bindExchange(this.myExchangeName, this.sourceExchangeName, '')
     }
 
     /**
@@ -64,25 +56,39 @@ export default class RabbitConsumer {
      * @param callback Callback function that is called when an event is received.
      * @param options Define a backoff function in case of an error. Default: Exponential backoff.
      */
-    async onMessage(eventName: string, callback: (msg: RabbitEventMessage) => any, options: Partial<RabbitConsumeOptions> = {}) {
+    async onMessage(sourceWorkerName: WorkerNameType, eventName: string, callback: (msg: RabbitEventMessage) => any, options: Partial<RabbitConsumeOptions> = {}) {
         options = Object.assign({}, defaultRabbitConsumeOptions, options)
 
-        const queueName = this.myQueueName + '.' + eventName
-        await this.channel.assertQueue(queueName, { 
-            durable: true, // Make queue persistent in case of a RabbitMq restart.
-            expires: this.options.deleteInactiveQueueMs === -1? undefined: this.options.deleteInactiveQueueMs // Delete queue after x ms of inactivity (no active consumers). Cleans up dead queues.
+        // Create exchange that subscribes to the event.
+        const sourceExchangeName = `blocktank.${sourceWorkerName}.events`
+        await this.channel.checkExchange(sourceExchangeName) // Make sure the source exchange exists
+        await this.channel.assertExchange(this.myExchangeName, 'x-delayed-message', { // Create a new exchange for this consumer that is able to delay messages
+            autoDelete: true, // Delete this exchange if no queue is present anymore.
+            arguments: {
+                'x-delayed-type': 'topic'
+            }
         })
-        await this.channel.bindQueue(queueName, this.myExchangeName, eventName)
+        this.channel.bindExchange(this.myExchangeName, sourceExchangeName, '')
 
+        // Create queue that subscribes only to the events we ask for.
+        const routingKey = `${sourceWorkerName}.${eventName}`
+        const queueName = `${this.myQueueName}.${routingKey}`
+        await this.channel.assertQueue(queueName, {
+            durable: true, // Make queue persistent in case of a RabbitMq restart.
+            expires: this.options.deleteInactiveQueueMs === -1 ? undefined : this.options.deleteInactiveQueueMs // Delete queue after x ms of inactivity (no active consumers). Cleans up dead queues.
+        })
+        await this.channel.bindQueue(queueName, this.myExchangeName, routingKey)
+
+        // Acutally consume messages
         await this.channel.consume(queueName, async msg => {
             let event: RabbitEventMessage;
             try {
-                event = RabbitEventMessage.fromJson(msg.content.toString(), eventName)
+                event = RabbitEventMessage.fromJson(msg.content.toString())
             } catch (e) {
                 console.error(`Failed to parse event message. Ignore message: ${msg.content.toString()}.`, e)
                 return
             }
-            
+
             try {
                 await callback(event)
                 this.channel.ack(msg)
@@ -96,15 +102,16 @@ export default class RabbitConsumer {
         })
     }
 
-    private async requeueAfterError(msg: amp.Message, delayMs: number=0) {
+    private async requeueAfterError(msg: amp.Message, delayMs: number = 0) {
         const headers: any = {}
         if (delayMs > 0) {
             headers['x-delay'] = delayMs
         }
-        this.channel.nack(msg, false, false)
+
         const keepSending = this.channel.publish(this.myExchangeName, msg.fields.routingKey, msg.content, {
             headers: headers
         })
+        this.channel.nack(msg, false, false)
         if (!keepSending) {
             await new Promise(resolve => this.channel.once('drain', resolve)) // Wait until the buffer is empty
         }

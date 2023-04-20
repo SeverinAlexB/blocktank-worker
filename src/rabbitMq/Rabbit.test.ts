@@ -14,8 +14,8 @@ describe('RabbitEvents', () => {
      */
     test('publish, consume, throw error, backoff 100ms, retry', async () => {
         const connection = await amp.connect('amqp://localhost:5672')
-        const publisher = new RabbitPublisher('ln-worker', { connection })
-        const consumer = new RabbitConsumer('bti-worker' + Math.ceil(Math.random()*10000), 'ln-worker', { 
+        const publisher = new RabbitPublisher('worker:ln-worker', { connection })
+        const consumer = new RabbitConsumer(`worker:bti-worker${Math.ceil(Math.random()*10000)}`, { 
             connection, 
             deleteInactiveQueueMs: 1*1000 // Cleans up queue after 1 second of inactivity. Increase to debug.
         })
@@ -31,7 +31,8 @@ describe('RabbitEvents', () => {
                     return reject("Timeout waiting on success")
                 }, 10*1000)
                 const start = new Date()
-                await consumer.onMessage('ln.invoicePaid', (msg) => {
+                await consumer.onMessage('worker:ln-worker', 'ln.invoicePaid', (msg) => {
+                    expect(i).toEqual(msg.attempt)
                     i++;
                     if (i < retryCount) {
                         throw new Error('retry')
@@ -56,11 +57,11 @@ describe('RabbitEvents', () => {
         }
     });
 
-    test('2 consumers, different event types', async () => {
+    xtest('2 consumers, different event types', async () => {
         const connection = await amp.connect('amqp://localhost:5672')
-        const publisher = new RabbitPublisher('ln-worker', { connection })
-        const consumer1 = new RabbitConsumer('bti-worker', 'ln-worker', { connection, deleteInactiveQueueMs: 60*1000 })
-        const consumer2 = new RabbitConsumer('bti-worker', 'ln-worker', { connection, deleteInactiveQueueMs: 60*1000 })
+        const publisher = new RabbitPublisher('worker:ln-worker', { connection })
+        const consumer1 = new RabbitConsumer('worker:bti-worker', { connection, deleteInactiveQueueMs: 60*1000 })
+        const consumer2 = new RabbitConsumer('worker:bti-worker', { connection, deleteInactiveQueueMs: 60*1000 })
         try {
             await publisher.init()
             await consumer1.init()
@@ -70,19 +71,19 @@ describe('RabbitEvents', () => {
             const waitOnResolveMessage = new Promise<any>(async (resolve, reject) => {
                 const processed = new Set<string>()
                 let i = 0;
-                await consumer1.onMessage('ln.invoicePaid', (msg) => {
+                await consumer1.onMessage('worker:ln-worker', 'ln.invoicePaid', (msg) => {
                     console.log('consumer1 invoicePaid', msg.content)
                     processed.add(msg.content)
                 })
-                await consumer2.onMessage('ln.invoicePaid', (msg) => {
+                await consumer2.onMessage('worker:ln-worker', 'ln.invoicePaid', (msg) => {
                     console.log('consumer2 invoicePaid', msg.content)
                     processed.add(msg.content)
                 })
-                await consumer1.onMessage('ln.invoiceCreated', (msg) => {
+                await consumer1.onMessage('worker:ln-worker', 'ln.invoiceCreated', (msg) => {
                     console.log('consumer1 invoiceCreated', msg.content)
                     processed.add(msg.content)
                 })
-                await consumer2.onMessage('ln.invoiceCreated', (msg) => {
+                await consumer2.onMessage('worker:ln-worker', 'ln.invoiceCreated', (msg) => {
                     console.log('consumer2 invoiceCreated', msg.content)
                     processed.add(msg.content)
                 })

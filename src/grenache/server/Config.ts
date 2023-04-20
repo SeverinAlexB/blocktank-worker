@@ -20,8 +20,6 @@ export interface GrenacheServerConfig {
      * Default: false.
      */
     callbackSupport: boolean,
-
-    amqpUrl?: string
   }
   
 /**

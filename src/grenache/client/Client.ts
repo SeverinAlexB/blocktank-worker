@@ -44,7 +44,6 @@ export class GrenacheClient {
     const params: MethodCallOptions = {
       method: method,
       args: args,
-      isEvent: opts.isEvent,
       sourceWorkerName: opts.sourceWorkerName as any
     }
 

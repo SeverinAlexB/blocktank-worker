@@ -1,14 +1,11 @@
-import { WorkerNameType } from "../WorkerNameType";
+import { RabbitConsumerOptions, defaultRabbitConsumerOptions } from "../../rabbitMq/RabbitCosumerOptions";
 import { GrenacheServerConfig, defaultGrenacheServerConfig } from "../server/Config";
 
 /**
  * Configuration for a blocktank worker.
  */
 export interface BlocktankWorkerConfig extends GrenacheServerConfig {
-    emitters: {
-        workerName: WorkerNameType,
-        events: string[]
-    }[]
+    rabbitMq: RabbitConsumerOptions
 }
 
 /**
@@ -18,6 +15,6 @@ export interface BlocktankWorkerConfig extends GrenacheServerConfig {
 export function defaultBlocktankWorkerConfig(): BlocktankWorkerConfig {
     return {
       ...defaultGrenacheServerConfig(),
-      emitters: []
+      rabbitMq: defaultRabbitConsumerOptions
     }
   }

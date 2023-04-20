@@ -11,12 +11,12 @@ export class BlocktankEventListener {
 
     isRegistered: boolean = false;
 
-    async call(implementation: WorkerImplementation, args: any[]) {
+    async call(implementation: WorkerImplementation, event: any) {
         const func = (implementation as any)[this.propertyKey]
         if (!func) {
             throw new Error(`Worker event ${this.eventName} not found.`);
         }
         
-        return await func(...args)
+        return await func(event)
     }
 }

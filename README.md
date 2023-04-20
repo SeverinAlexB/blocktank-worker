@@ -4,15 +4,23 @@ This module is the base class that all microservice workers in Blocktank use. It
 
 ## Usage
 
+**Install package**
 ```bash
 npm i git+https://github.com/SeverinAlexB/blocktank-worker.git#typescript
 ```
 
-Run DHT
+**Run DHT for worker discovery**
 ```bash
 grape --dp 20001 --aph 30001 --bn '127.0.0.1:20002' &
 grape --dp 20002 --aph 40001 --bn '127.0.0.1:20001' &  
 ```
+
+**Run RabbitMQ for events**
+```bash
+docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 heidiks/rabbitmq-delayed-message-exchange:3.10.2-management
+```
+
+Open http://localhost:15672/ and login with guest/guest.
 
 ## Worker
 
@@ -22,15 +30,20 @@ A Worker consists of
 
 
 ```typescript
-import { Worker, WorkerImplementation } from 'blocktank-worker';
+import { Worker, WorkerImplementation, waitOnSigint, RabbitEventMessage } from 'blocktank-worker';
+
 
 class MyFirstWorkerImplemetation extends WorkerImplementation {
-    // Every method defined in here can be called by other workers/clients.
+    /**
+     * Every method defined in here can be called by other workers/clients.
+     */
     async helloWorld(name1: string, name2: string) {
         return `Hello ${name1} and ${name2}`;
     }
 
-    // Every worker also contains a GrenacheClient to call other worker methods.
+    /**
+     * Every worker also contains a GrenacheClient to call other worker methods.
+     */
     async usdToBtc(usd: number) {
         const exchangeRate = this.client.encapsulateWorker('worker:exchange_rate') // Get exchangeRate worker
         const btcUsd = await exchangeRate.getRate("BTCUSD") // Call method on exchangeRate worker.
@@ -38,14 +51,33 @@ class MyFirstWorkerImplemetation extends WorkerImplementation {
         // Current BTCUSD price is $30,000
         return usd/btcUsd
     }
+
+    /**
+     * Subscribe to an event
+     */
+    @SubscribeToBlocktankEvent('worker:lightning', 'invoicePaid')
+    async onLightningInvoicePaidEvent(event: RabbitEventMessage) {
+        // This method will be called when `worker:lightning` emits a `invoicePaid` event.
+        const eventData = event.content;
+        // To run this worker, you must ensure `worker:lightning` is running, otherwise this method will not be able to subscribe to the events.
+    }
+
+    /**
+     * Publish my own events
+     */
+    async emitMyOwnEvent() {
+        await this.runner.events.emitEvent('myEventName', { myData: 'myValue' })
+        // Use the decorator @SubscribeToBlocktankEvent('worker:MyFirstWorker', 'myEventName') to subscribe to this event.
+    }
 }
 
 const runner = new Worker(new MyFirstWorkerImplemetation(), {
-    name: 'worker:MyFirstWorker'
+    name: 'worker:MyFirstWorker', // Name of the worker. Must start with `worker:`.
+    emitsEvents: true // If true, this worker will create the nessecary RabbitMQ objects and is able to emit events. Default: false
 })
 try {
     await runner.start();
-    await ctrlC()
+    await waitOnSigint() // Wait on Ctrl+C
 } finally {
     await runner.stop()
 }
@@ -57,6 +89,8 @@ try {
 * Supports, async and sync and callback functions.
     * If callback functions are used, initialize the Worker with `callbackSupport: true`.
 * Automatically returns `Error`s.
+* Able to emit and receive events.
+    * Methods that subscribe to an event and throw an error are retried in an exponential backoff manner.
 
 **client** *GrenacheClient* to call other workers.
 
@@ -67,14 +101,23 @@ try {
 
 * `worker`: *WorkerImplementation*
 * `config?` *GrenacheServerConfig*
-    * `name?` *string* Name of the worker. Announced on DHT. Must start with `worker:`. Default: Random name.
+    * `name?` *string* Name of the worker. Announced on DHT. Used to name RabbitMQ queues. Must start with `worker:`. Default: Random name.
     * `grapeUrl?` *string* URL to the grape DHT. Default: `http://127.0.0.1:30001`.
     * `port?` *integer* Server port. Default: Random port between 10,000 and 40,000.
     * `callbackSupport?` *boolean* Allows WorkerImplementation functions to be written with callbacks. Disables the method argument count check. Default: false
+    * `connection?` *amp.Connection* RabbitMQ connection. Mutually exclusive with `amqpUrl`.
+    * `amqpUrl` *string* RabbitMQ connection URL. Mutually exclusive with `connection`. Default: `amqp://localhost:5672`.
+    * `deleteInactiveQueueMs` *number* Time in ms after which inactive queues without consumers are deleted. Default: 1 week.
+    * `emitsEvents` *boolean* If true, this worker will create the nessecary RabbitMQ objects to emit events. Default: false
+
 
 **async start()** Starts the worker. Listens on given port.
 
 **async stop()** Stops the worker. Graceful shutdown.
+
+* `options?` *WorkerStopOptions*
+    * `cleanupRabbitMq?` *boolean* Deletes all RabbitMQ queues and exchanges that were created by this worker. Used for testing. Default: false.
+
 
 
 
@@ -82,7 +125,7 @@ try {
 
 ## Client
 
-`GrenacheClient` allows you to call other workers without exposing your own server.
+`GrenacheClient` allows to call other workers without exposing your own server.
 
 ```typescript
 import { GrenacheClient } from 'blocktank-worker'

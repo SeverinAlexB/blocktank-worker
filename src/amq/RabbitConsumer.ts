@@ -2,14 +2,15 @@ import * as amp from 'amqplib'
 import { RabbitConnectionOptions, defaultRabbitConnectionOptions } from './RabbitConnectionOptions'
 import { RabbitConsumeOptions, defaultRabbitConsumeOptions } from './RabbitConsumeOptions'
 import RabbitEventMessage from './RabbitEventMessage'
+import { RabbitConsumerOptions, defaultRabbitConsumerOptions } from './RabbitCosumerOptions'
 
 export default class RabbitConsumer {
 
     public connection: amp.Connection
     public channel: amp.Channel
-    public options: RabbitConnectionOptions
-    constructor(public myWorkerName: string, public sourceWorkerName: string, options: Partial<RabbitConnectionOptions> = {}) {
-        this.options = Object.assign({}, defaultRabbitConnectionOptions, options)
+    public options: RabbitConsumerOptions
+    constructor(public myWorkerName: string, public sourceWorkerName: string, options: Partial<RabbitConsumerOptions> = {}) {
+        this.options = Object.assign({}, defaultRabbitConsumerOptions, options)
      }
 
     get sourceExchangeName(): string {
@@ -66,10 +67,9 @@ export default class RabbitConsumer {
         options = Object.assign({}, defaultRabbitConsumeOptions, options)
 
         const queueName = this.myQueueName + '.' + eventName
-        const _2Week = 1000 * 60 * 60 * 24 * 7 * 2;
         await this.channel.assertQueue(queueName, { 
             durable: true, // Make queue persistent in case of a RabbitMq restart.
-            expires: _2Week // Delete queue after 2 weeks of inactivity (no active consumers). Cleans up dead queues.
+            expires: this.options.deleteInactiveQueueMs === -1? undefined: this.options.deleteInactiveQueueMs // Delete queue after x ms of inactivity (no active consumers). Cleans up dead queues.
         })
         await this.channel.bindQueue(queueName, this.myExchangeName, eventName)
 
@@ -86,25 +86,25 @@ export default class RabbitConsumer {
                 await callback(event)
                 this.channel.ack(msg)
             } catch (e) {
-                console.error(`Failed to process message ${msg.content.toString()}. Reschedule with delay.`, e)
+                // console.error(`Failed to process message ${msg.content.toString()}. Reschedule with delay.`, e)
                 const delayMs = options.backoffFunction(event.attempt)
                 event.attempt++
                 msg.content = Buffer.from(event.toJson())
-                this.requeueAfterError(msg, delayMs)
+                await this.requeueAfterError(msg, delayMs)
             }
         })
     }
 
-    private requeueAfterError(msg: amp.Message, delayMs: number=0) {
+    private async requeueAfterError(msg: amp.Message, delayMs: number=0) {
         const headers: any = {}
         if (delayMs > 0) {
             headers['x-delay'] = delayMs
         }
-        const isBufferFul = this.channel.publish(this.myExchangeName, msg.fields.routingKey, msg.content, {
+        const keepSending = this.channel.publish(this.myExchangeName, msg.fields.routingKey, msg.content, {
             headers: headers
         })
-        if (isBufferFul) {
-            throw new Error('RabbitMq buffer is full.') // This is just a sanity check. This should never happen hopefully.
+        if (!keepSending) {
+            await new Promise(resolve => this.channel.once('drain', resolve)) // Wait until the buffer is empty
         }
         this.channel.nack(msg, false, false)
     }

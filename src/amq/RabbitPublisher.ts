@@ -46,11 +46,13 @@ export default class RabbitPublisher {
      * @param message 
      * @returns 
      */
-    publish(eventName: string, message: string) {
+    async publish(eventName: string, message: string) {
         const event = new RabbitEventMessage(eventName, message)
-        const isBufferFul = this.channel.publish(this.exchangeName, eventName, Buffer.from(event.toJson()))
-        if (isBufferFul) {
-            throw new Error('RabbitMq buffer is full.') // This is just a sanity check. This should never happen hopefully.
+        const keepSending = this.channel.publish(this.exchangeName, eventName, Buffer.from(event.toJson()))
+        if (!keepSending) {
+            console.warn('wait on drain event')
+            await new Promise(resolve => this.channel.once('drain', resolve)) // Wait until the buffer is empty
+            console.log('drained!')
         }
     }
 }

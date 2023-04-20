@@ -13,7 +13,7 @@ export default class RabbitPublisher {
     public options: RabbitConnectionOptions
     constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConnectionOptions> = {}) {
         this.options = Object.assign({}, defaultRabbitConnectionOptions, options)
-     }
+    }
 
     get exchangeName(): string {
         return `blocktank.${this.myWorkerName}.events`
@@ -34,7 +34,15 @@ export default class RabbitPublisher {
         await this.channel.assertExchange(this.exchangeName, 'fanout')
     }
 
-    async stop() {
+    /**
+     * Stops RabbitMq connection.
+     * @param cleanupRabbitMq Cleans up all objects on RabbitMQ. Used for testing.
+     */
+    async stop(cleanupRabbitMq = false) {
+        if (cleanupRabbitMq) {
+            await this.channel.deleteExchange(this.exchangeName)
+        }
+
         if (this.options.connection) {
             await this.channel.close()
         } else {
@@ -48,8 +56,8 @@ export default class RabbitPublisher {
      * @param message 
      * @returns 
      */
-    async publish(eventName: string, message: string) {
-        const event = new RabbitEventMessage(this.myWorkerName, eventName, message)
+    async publish(eventName: string, data: any) {
+        const event = new RabbitEventMessage(this.myWorkerName, eventName, data)
         const keepSending = this.channel.publish(this.exchangeName, event.routingKey, Buffer.from(event.toJson()))
         if (!keepSending) {
             console.warn('wait on drain event')

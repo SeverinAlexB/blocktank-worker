@@ -51,8 +51,8 @@ describe('RabbitEvents', () => {
             })
             await waitOnSuccess
         } finally {
-            await publisher.stop()
-            await consumer.stop()
+            await publisher.stop(true)
+            await consumer.stop(true)
             await connection.close()
         }
     });
@@ -103,9 +103,9 @@ describe('RabbitEvents', () => {
             expect(response.timeout).toBe(false)
             await sleep(1000*10)
         } finally {
-            await publisher.stop()
-            await consumer1.stop()
-            await consumer2.stop()
+            await publisher.stop(true)
+            await consumer1.stop(true)
+            await consumer2.stop(true)
             await connection.close()
         }
     });

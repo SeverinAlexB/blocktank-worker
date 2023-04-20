@@ -8,6 +8,13 @@ import { WorkerImplementation } from './WorkerImplementation'
 import { EventManager } from './events/Manager'
 import { BlocktankWorkerConfig, defaultBlocktankWorkerConfig } from './Config'
 
+interface WorkerStopOptions {
+  /**
+   * Options to clean up RabbitMQ object like exchanges or queues. Used for testing.
+   */
+  cleanupRabbitMq: boolean
+}
+
 
 // Todo: Sync runner check all implementations
 
@@ -39,7 +46,6 @@ export class Worker {
 
     this._syncThrottleNotImplementedWarn();
     await sleep(100); // Wait until the server is announced on Grape
-    await this.events.initializeListeners()
   }
 
   private async initServer() {
@@ -112,10 +118,14 @@ export class Worker {
 
   /**
    * Shut down the worker gracefully.
+   * @param options 
    */
-  async stop() {
-    this.gClient.stop();
+  async stop(options: Partial<WorkerStopOptions> = {}) {
+    options = Object.assign({}, { cleanupRabbitMq: true }, options) 
+    await this.events.stop(options.cleanupRabbitMq)
     this.gServer.stop();
+    this.gClient.stop();
+
   }
 }
 

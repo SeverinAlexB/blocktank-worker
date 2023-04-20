@@ -1,3 +1,4 @@
+import RabbitEventMessage from "../../../rabbitMq/RabbitEventMessage";
 import { WorkerNameType } from "../../WorkerNameType";
 import { WorkerImplementation } from "../WorkerImplementation";
 
@@ -7,16 +8,10 @@ import { WorkerImplementation } from "../WorkerImplementation";
 export class BlocktankEventListener {
     workerName: WorkerNameType;
     eventName: string;
-    propertyKey: string;
-
-    isRegistered: boolean = false;
-
-    async call(implementation: WorkerImplementation, event: any) {
-        const func = (implementation as any)[this.propertyKey]
-        if (!func) {
-            throw new Error(`Worker event ${this.eventName} not found.`);
-        }
-        
-        return await func(event)
+    propertyKey: string; // methodName of the local function
+    
+    async call(implementation: WorkerImplementation, event: RabbitEventMessage) {
+        const func = (implementation as any)[this.propertyKey]        
+        return await func.bind(implementation)(event)
     }
 }

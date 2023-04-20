@@ -1,4 +1,5 @@
 import RabbitConsumer from "../../../rabbitMq/RabbitConsumer";
+import RabbitEventMessage from "../../../rabbitMq/RabbitEventMessage";
 import RabbitPublisher from "../../../rabbitMq/RabbitPublisher";
 import { WorkerNameType } from "../../WorkerNameType";
 import { Worker } from "../Worker";
@@ -16,25 +17,31 @@ export class EventManager {
 
     public async init(worker: Worker) {
         this.worker = worker
+        if (this.worker.config.emitsEvents) {
+            await this.getRabbitPublisherLazy() // Init publisher so everybody can subscribe to this worker's events
+        }
         this._extractDecoratoredListeners()
         await this.subscribeToEvents()
     }
 
     private async getRabbitMqConnectionLazy(): Promise<amp.Connection> {
         if (!this._rabbitMqConncetion) {
-            if (this.worker.config.rabbitMq.connection) {
-                this._rabbitMqConncetion = this.worker.config.rabbitMq.connection
+            if (this.worker.config.connection) {
+                this._rabbitMqConncetion = this.worker.config.connection
             } else {
-                this._rabbitMqConncetion = await amp.connect(this.worker.config.rabbitMq.amqpUrl)
+                this._rabbitMqConncetion = await amp.connect(this.worker.config.amqpUrl)
             }
         }
         return this._rabbitMqConncetion
     }
 
     private async getRabbitPublisherLazy(): Promise<RabbitPublisher> {
+        if (!this.worker.config.emitsEvents) {
+            throw new Error('This worker does not emit events. Set `BlocktankWorkerConfig.emitsEvents` to true to allow event emission.')
+        }
         if (!this._publisher) {
             this._publisher = new RabbitPublisher(this.worker.config.name, {
-                ...this.worker.config.rabbitMq,
+                ...this.worker.config,
                 connection: await this.getRabbitMqConnectionLazy()
             })
             await this._publisher.init()
@@ -45,7 +52,7 @@ export class EventManager {
     private async getRabbitConsumerLazy(): Promise<RabbitConsumer> {
         if (!this._consumer) {
             this._consumer = new RabbitConsumer(this.worker.config.name , {
-                ...this.worker.config.rabbitMq,
+                ...this.worker.config,
                 connection: await this.getRabbitMqConnectionLazy(),
             })
             await this._consumer.init()
@@ -62,7 +69,7 @@ export class EventManager {
         for (const listener of this.listeners) {
             const consumer = await this.getRabbitConsumerLazy()
             await consumer.onMessage(listener.workerName, listener.eventName, async (msg: any) => {
-                await this.processEvent(listener.workerName, listener.eventName, msg)
+                await this.processEvent(msg)
             })
         }
     }
@@ -74,7 +81,7 @@ export class EventManager {
      */
     async emitEvent(eventName: string, data: any) {
         const publisher = await this.getRabbitPublisherLazy()
-        await publisher.publish(eventName, JSON.stringify(data))
+        await publisher.publish(eventName, data)
     }
 
     /**
@@ -84,46 +91,29 @@ export class EventManager {
      * @param args 
      * @returns 
      */
-    async processEvent(workerName: WorkerNameType, eventName: string, args: any[]) {
-        const targetSubscriptions = this.listeners.filter(sub => sub.eventName === eventName && sub.workerName === workerName)
+    async processEvent(event: RabbitEventMessage) {
+        const targetSubscriptions = this.listeners.filter(sub => sub.eventName === event.eventName && sub.workerName === event.sourceWorker)
 
         if (targetSubscriptions.length === 0) {
-            console.error('Received event that we did not subscribed to', workerName, eventName, args)
+            console.error('Received event that we did not subscribed to', event)
             return
         }
 
         for (const sub of targetSubscriptions) {
-            return await sub.call(this.worker.implementation, args)
-        }
-    }
-
-    /**
-     * Takes the registered Listeners and notifies the workers that we want to listen to their events.
-     */
-    public async initializeListeners() {
-        const workerListeners = new Map<string, BlocktankEventListener[]>()
-        for (const listener of this.listeners) {
-            if (!workerListeners.has(listener.workerName)) {
-                workerListeners.set(listener.workerName, [])
-            }
-            workerListeners.get(listener.workerName).push(listener)
-        }
-
-        for (const listeners of workerListeners.values()) {
-            const eventNames = listeners.map(listener => listener.eventName)
-            await this.worker.gClient.call(listeners[0].workerName, '__subscribeToEvents', [this.worker.config.name, eventNames])
+            return await sub.call(this.worker.implementation, event)
         }
     }
 
     /**
      * Shutdown any consumer or publishers.
+     * @param cleanupRabbitMq Cleans up all objects on RabbitMQ. Used for testing.
      */
-    public async stop() {
+    public async stop(cleanupRabbitMq: boolean = false) {
         if (this._publisher) {
-            await this._publisher.stop()
+            await this._publisher.stop(cleanupRabbitMq)
         }
         if (this._consumer) {
-            await this._consumer.stop()
+            await this._consumer.stop(cleanupRabbitMq)
         }
         if (this._rabbitMqConncetion) {
             await this._rabbitMqConncetion.close()

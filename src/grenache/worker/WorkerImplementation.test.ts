@@ -32,6 +32,8 @@ class TestImplementation extends WorkerImplementation {
 
 jest.setTimeout(60*1000)
 
+// Make sure to run Grape DHT before running this test
+
 
 describe('WorkerImplementation', () => {
     test('sync method call', async () => {
@@ -41,7 +43,7 @@ describe('WorkerImplementation', () => {
             const response = await runner.gClient.call(runner.config.name, 'syncMethod', ['Sepp']);
             expect(response).toBe('hello Sepp');
         } finally {
-            await runner.stop()
+            await runner.stop({cleanupRabbitMq: true})
         }
     });
 
@@ -55,7 +57,7 @@ describe('WorkerImplementation', () => {
         } catch (e) {
             expect(e.message).toEqual('Hello Sepp')
         } finally {
-            await runner.stop()
+            await runner.stop({cleanupRabbitMq: true})
         }
     });
 
@@ -66,7 +68,7 @@ describe('WorkerImplementation', () => {
             const response = await runner.gClient.call(runner.config.name, 'asyncMethod', ['Sepp']);
             expect(response).toBe('hello Sepp');
         } finally {
-            await runner.stop()
+            await runner.stop({cleanupRabbitMq: true})
         }
     });
 
@@ -80,7 +82,7 @@ describe('WorkerImplementation', () => {
         } catch (e) {
             expect(e.message).toEqual('Hello Sepp')
         } finally {
-            await runner.stop()
+            await runner.stop({cleanupRabbitMq: true})
         }
     });
 
@@ -91,7 +93,7 @@ describe('WorkerImplementation', () => {
             const response = await runner.gClient.call(runner.config.name, 'callbackMethod', ['Sepp']);
             expect(response).toBe('hello Sepp');
         } finally {
-            await runner.stop()
+            await runner.stop({cleanupRabbitMq: true})
         }
     });
 
@@ -105,7 +107,7 @@ describe('WorkerImplementation', () => {
         } catch (e) {
             expect(e.message).toEqual('Hello Sepp')
         } finally {
-            await runner.stop()
+            await runner.stop({cleanupRabbitMq: true})
         }
     });
 
@@ -117,7 +119,7 @@ describe('WorkerImplementation', () => {
             const response = await worker.syncMethod('Sepp')
             expect(response).toBe('hello Sepp');
         } finally {
-            await runner.stop()
+            await runner.stop({cleanupRabbitMq: true})
         }
     });
 });

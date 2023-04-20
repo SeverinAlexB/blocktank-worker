@@ -2,18 +2,19 @@ import { WorkerImplementation } from "../WorkerImplementation";
 import { Worker } from "../Worker";
 import {SubscribeToBlocktankEvent} from './ListenerDecorator'
 import { WorkerNameType } from "../../WorkerNameType";
+import { sleep } from "../../../utils";
+import RabbitEventMessage from "../../../rabbitMq/RabbitEventMessage";
 
 // Making the server name more generic so the DHT doesnt clash with old test names.
-const serverWorkerName: WorkerNameType = `worker:server${Math.random().toString(36).substring(7)}` 
+const serverWorkerName: WorkerNameType = `worker:server-${Math.random().toString(36).substring(7)}` 
 
-class ServerImplementation extends WorkerImplementation {}
 
 class ListenerImplementation extends WorkerImplementation {
-    @SubscribeToBlocktankEvent(serverWorkerName, 'invoicePaid')
-    async invoicePaidEvent(param: string) {
-        console.log('invoicePaid', param)
+    @SubscribeToBlocktankEvent(serverWorkerName, 'invoicePaid')  // Subscribe to myself. This makes sure the source worker actually exists.
+    async invoicePaidEvent(data: any) {
+        // console.log('invoicePaid', data)
         return true
-      }
+    }
 }
 
 
@@ -23,8 +24,10 @@ jest.setTimeout(60*1000)
 describe('EventManger', () => {
     test('EventDecorator registered internally', async () => {
         const implementation = new ListenerImplementation()
-        const worker = new Worker(implementation);
-        jest.spyOn(worker.events, 'initializeListeners').mockImplementation(async () => {});
+        const worker = new Worker(implementation, {
+            name: serverWorkerName,
+            emitsEvents: true
+        } );
         try {
             await worker.start()
             expect(worker.events.listeners.length).toEqual(1)
@@ -33,59 +36,29 @@ describe('EventManger', () => {
             expect(listener.workerName).toEqual(serverWorkerName)
             expect(listener.propertyKey).toEqual('invoicePaidEvent')
         } finally {
-            await worker.stop()
-        }
-    });
-
-    test('Register the calls externally', async () => {
-        const implementation = new ListenerImplementation()
-        const worker = new Worker(implementation);
-        jest.spyOn(worker.gClient, 'call').mockImplementation(async (_) => true);
-        try {
-            await worker.start()
-            expect(worker.gClient.call).toHaveBeenCalled()
-            expect(worker.gClient.call).toHaveBeenLastCalledWith(serverWorkerName, '__subscribeToEvents', [worker.config.name, ['invoicePaid']])
-        } finally {
-            await worker.stop()
-        }
-    });
-
-    test('Register listener on server', async () => {
-        const implementation = new ServerImplementation()
-        const worker = new Worker(implementation);
-        jest.spyOn(worker.gClient, 'call').mockImplementation(async (_) => true);
-        try {
-            await worker.start()
-            const response = await worker.callMethod({
-                method: '__subscribeToEvents',
-                args: ['worker:client', ['invoicePaid']]
-            })
-            expect(response).toEqual(true)
-        } finally {
-            await worker.stop()
+            await worker.stop({cleanupRabbitMq: true})
         }
     });
 
     test('Server<>Client event interaction', async () => {
-        const serverImplementation = new ServerImplementation()
-        const server = new Worker(serverImplementation, {
-            name: serverWorkerName
+        const implementation = new ListenerImplementation()
+        const worker = new Worker(implementation, {
+            name: serverWorkerName,
+            emitsEvents: true,
         });
-
-        const listenerImplementation = new ListenerImplementation()
-        const client = new Worker(listenerImplementation, {
-            callbackSupport: true
-        });
-        jest.spyOn(listenerImplementation, 'invoicePaidEvent')
+        jest.spyOn(implementation, 'invoicePaidEvent')
         try {
-            await server.start();
-            await client.start()
-
-            await server.events.emitEvent('invoicePaid', ['test'])
-            expect(listenerImplementation.invoicePaidEvent).toHaveBeenCalled()
+            await worker.start();
+            await worker.events.emitEvent('invoicePaid', ['test'])
+            await sleep(500)
+            expect(implementation.invoicePaidEvent).toHaveBeenCalled()
+            const callData = (implementation.invoicePaidEvent as any).mock.calls[0][0] as RabbitEventMessage
+            expect(callData.attempt).toEqual(0)
+            expect(callData.eventName).toEqual('invoicePaid')
+            expect(callData.sourceWorker).toEqual(serverWorkerName)
+            expect(callData.content).toEqual(['test'])
         } finally {
-            await server.stop()
-            await client.stop()
+            await worker.stop({cleanupRabbitMq: true})
         }
     });
 

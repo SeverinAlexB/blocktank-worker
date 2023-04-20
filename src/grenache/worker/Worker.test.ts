@@ -21,6 +21,7 @@ class TestWorker extends WorkerImplementation {
 
 }
 
+// Make sure to run Grape DHT before running this test
 
 jest.setTimeout(60 * 1000)
 

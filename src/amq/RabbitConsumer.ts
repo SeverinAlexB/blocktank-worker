@@ -38,8 +38,9 @@ export default class RabbitConsumer {
         }
         this.channel = await this.connection.createChannel()
 
-        await this.channel.assertExchange(this.sourceExchangeName, 'fanout') // Make sure the target exchange exists
+        await this.channel.checkExchange(this.sourceExchangeName) // Make sure the source exchange exists
         await this.channel.assertExchange(this.myExchangeName, 'x-delayed-message', { // Create a new exchange for this consumer that is able to delay messages
+            autoDelete: true,
             arguments: {
                 'x-delayed-type': 'topic'
             }
@@ -100,13 +101,14 @@ export default class RabbitConsumer {
         if (delayMs > 0) {
             headers['x-delay'] = delayMs
         }
+        this.channel.nack(msg, false, false)
         const keepSending = this.channel.publish(this.myExchangeName, msg.fields.routingKey, msg.content, {
             headers: headers
         })
         if (!keepSending) {
             await new Promise(resolve => this.channel.once('drain', resolve)) // Wait until the buffer is empty
         }
-        this.channel.nack(msg, false, false)
+
     }
 }
 

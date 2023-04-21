@@ -65,7 +65,6 @@ class MyFirstWorkerImplementation extends WorkerImplementation {
 
 const runner = new Worker(new MyFirstWorkerImplementation(), {
     name: 'MyFirstWorker', // Name of the worker.
-    emitsEvents: true // If true, this worker will create the nessecary RabbitMQ objects and is able to emit events. Default: false
 })
 try {
     await runner.start();
@@ -100,7 +99,6 @@ try {
     * `connection?` *amp.Connection* RabbitMQ connection. Mutually exclusive with `amqpUrl`.
     * `amqpUrl` *string* RabbitMQ connection URL. Mutually exclusive with `connection`. Default: `amqp://localhost:5672`.
     * `deleteInactiveQueueMs` *number* Time in ms after which inactive queues without consumers are deleted. Default: 1 week.
-    * `emitsEvents` *boolean* If true, this worker will create the necessary RabbitMQ objects to emit events. Default: false,
     * `namespace` *string* RabbitMQ namespace. All objects like exchanges, queues will start with `{namespace}.`. Default: `blocktank`
 
 

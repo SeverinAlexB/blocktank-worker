@@ -5,10 +5,6 @@ import { GrenacheServerConfig, defaultGrenacheServerConfig } from "../server/Con
  * Configuration for a blocktank worker.
  */
 export interface BlocktankWorkerConfig extends GrenacheServerConfig, RabbitConsumerOptions {
-  /**
-   * Describes if this worker emits events and therefore creates a RabbitMQ exchange.
-   */
-  emitsEvents: boolean
 }
 
 /**
@@ -19,6 +15,5 @@ export function defaultBlocktankWorkerConfig(): BlocktankWorkerConfig {
     return {
       ...defaultGrenacheServerConfig(),
       ...defaultRabbitConsumerOptions,
-      emitsEvents: false
     }
   }

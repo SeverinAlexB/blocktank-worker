@@ -29,8 +29,7 @@ describe('EventManger', () => {
     test('EventDecorator registered internally', async () => {
         const implementation = new ListenerImplementation()
         const worker = new Worker(implementation, {
-            name: serverWorkerName,
-            emitsEvents: true
+            name: serverWorkerName
         } );
         try {
             await worker.start()
@@ -47,8 +46,7 @@ describe('EventManger', () => {
     test('Server<>Client event interaction', async () => {
         const implementation = new ListenerImplementation()
         const worker = new Worker(implementation, {
-            name: serverWorkerName,
-            emitsEvents: true,
+            name: serverWorkerName
         });
         jest.spyOn(implementation, 'invoicePaidEvent')
         try {

@@ -17,9 +17,7 @@ export class EventManager {
 
     public async init(worker: Worker) {
         this.worker = worker
-        if (this.worker.config.emitsEvents) {
-            await this.getRabbitPublisherLazy() // Init publisher so everybody can subscribe to this worker's events
-        }
+        await this.getRabbitPublisherLazy()
         this._extractDecoratoredListeners()
         await this.subscribeToEvents()
     }
@@ -36,9 +34,6 @@ export class EventManager {
     }
 
     private async getRabbitPublisherLazy(): Promise<RabbitPublisher> {
-        if (!this.worker.config.emitsEvents) {
-            throw new Error('This worker does not emit events. Set `BlocktankWorkerConfig.emitsEvents` to true to allow event emission.')
-        }
         if (!this._publisher) {
             this._publisher = new RabbitPublisher(this.worker.config.name, {
                 ...this.worker.config,

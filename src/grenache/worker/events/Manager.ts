@@ -70,7 +70,7 @@ export class EventManager {
             const consumer = await this.getRabbitConsumerLazy()
             await consumer.onMessage(listener.workerName, listener.eventName, async (msg: any) => {
                 await this.processEvent(msg)
-            })
+            }, listener.options)
         }
     }
 

@@ -189,7 +189,23 @@ registerBlocktankEvent('lightning', 'invoicePaid', ListenerImplementation, 'invo
 
 ## RabbitMQ / Events
 
-`RabbitPublisher` and `RabbitConsumer` manage all events around the worker. Checkout [RabbitMQ docs](./docs/rabbitMQ-events.drawio.png) to get an overview on the exchange/queue structure.
+`RabbitPublisher` and `RabbitConsumer` manage all events around the worker. 
+
+Events work on a "at least once" delivery basis. 
+
+### Error backoff
+
+Each event can define a custom backoff function in case of an error. 
+Default: Exponential backoff, max 1 hr though:  `Math.min(1000 * Math.pow(2, attempt), _1hr)`
+
+```typescript
+@SubscribeToBlocktankEvent('lightning', 'invoicePaid', {
+    backoffFunction: (attempt) => attempt*1000 
+})
+async myMethod() {}
+```
+
+Checkout [RabbitMQ docs](./docs/rabbitMQ-events.drawio.png) to get an overview on the exchange/queue structure.
 
 ## Development
 

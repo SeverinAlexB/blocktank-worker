@@ -1,3 +1,4 @@
+import { RabbitConsumeOptions, defaultRabbitConsumeOptions } from "../../../rabbitMq/RabbitConsumeOptions";
 import { WorkerNameType } from "../../WorkerNameType";
 import { WorkerImplementation } from "../WorkerImplementation";
 import { BlocktankEventListener } from "./Listener";
@@ -5,12 +6,15 @@ import { BlocktankEventListener } from "./Listener";
 
 export const DecoratedListenerKey = 'registeredDecoratedListeners'
 
-function _registerBlocktankEvent(workerName: WorkerNameType, eventName: string, targetClass: any, methodName: string) {
+function _registerBlocktankEvent(workerName: WorkerNameType, eventName: string, targetClass: any, methodName: string, 
+    options: Partial<RabbitConsumeOptions>) {
+    
     targetClass[DecoratedListenerKey] = targetClass[DecoratedListenerKey] || []
     const event: BlocktankEventListener = new BlocktankEventListener()
     event.workerName = workerName
     event.eventName = eventName
     event.propertyKey = methodName
+    event.options = Object.assign({}, defaultRabbitConsumeOptions, options)
     targetClass[DecoratedListenerKey].push(event)
 }
 
@@ -20,9 +24,9 @@ function _registerBlocktankEvent(workerName: WorkerNameType, eventName: string, 
  * @param eventName Name of the event.
  * @returns 
  */
-export function SubscribeToBlocktankEvent(workerName: WorkerNameType, eventName: string): any {
+export function SubscribeToBlocktankEvent(workerName: WorkerNameType, eventName: string, options: Partial<RabbitConsumeOptions> = {}): any {
     return (target: any, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) => {
-        _registerBlocktankEvent(workerName, eventName, target, propertyKey)
+        _registerBlocktankEvent(workerName, eventName, target, propertyKey, options)
         return descriptor
     };
 
@@ -35,6 +39,6 @@ export function SubscribeToBlocktankEvent(workerName: WorkerNameType, eventName:
  * @param targetClass WorkerImplementation
  * @param methodName Name of the method of the WorkerImplementation that should be called in case of an event.
  */
-export function registerBlocktankEvent(workerName: WorkerNameType, eventName: string, targetClass: WorkerImplementation, methodName: string) {
-    _registerBlocktankEvent(workerName, eventName, (targetClass as any).prototype, methodName)
+export function registerBlocktankEvent(workerName: WorkerNameType, eventName: string, targetClass: WorkerImplementation, methodName: string, options: Partial<RabbitConsumeOptions> = {}) {
+    _registerBlocktankEvent(workerName, eventName, (targetClass as any).prototype, methodName, options)
 }

@@ -10,7 +10,7 @@ export interface RabbitConsumeOptions {
 
 export const defaultRabbitConsumeOptions: RabbitConsumeOptions = {
     backoffFunction: (attempt: number) => {
-        const exponential = Math.min(1000 * Math.pow(2, attempt), 30000)
+        const exponential = 1000 * Math.pow(2, attempt)
         const max1Hour = 60 * 60 * 1000
         return Math.min(exponential, max1Hour)
     }

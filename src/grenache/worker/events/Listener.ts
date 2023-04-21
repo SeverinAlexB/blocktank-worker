@@ -1,3 +1,4 @@
+import { RabbitConsumeOptions } from "../../../rabbitMq/RabbitConsumeOptions";
 import RabbitEventMessage from "../../../rabbitMq/RabbitEventMessage";
 import { WorkerNameType } from "../../WorkerNameType";
 import { WorkerImplementation } from "../WorkerImplementation";
@@ -9,6 +10,7 @@ export class BlocktankEventListener {
     workerName: WorkerNameType;
     eventName: string;
     propertyKey: string; // methodName of the local function
+    options: RabbitConsumeOptions
     
     async call(implementation: WorkerImplementation, event: RabbitEventMessage) {
         const func = (implementation as any)[this.propertyKey]        

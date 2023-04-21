@@ -20,13 +20,15 @@ grape --dp 20002 --aph 40001 --bn '127.0.0.1:20001' &
 docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 heidiks/rabbitmq-delayed-message-exchange:3.10.2-management
 ```
 
-Open http://localhost:15672/ and login with guest/guest.
+Open the dashboard http://localhost:15672/ and login with guest/guest.
 
 ## Worker
 
 A Worker consists of 
 * a server that listens on method calls.
 * a client that can call other servers.
+* RabbitMQ publisher (fanout exchange).
+* RabbitMQ consumer (topic exchange + a queue for each event type).
 
 
 ```typescript
@@ -120,9 +122,6 @@ try {
 
 
 
-
-
-
 ## Client
 
 `GrenacheClient` allows to call other workers without exposing your own server.
@@ -167,8 +166,8 @@ console.log(response2) // Hello Sepp and Pirmin
 
 ```typescript
 // Example
-const worker = client.encapsulateWorker('worker:MyFirstWorker')
-const response = await worker.helloWorld('Sepp')
+const myFirstWorker = client.encapsulateWorker('worker:MyFirstWorker')
+const response = await myFirstWorker.helloWorld('Sepp')
 // Hello Sepp
 ```
 

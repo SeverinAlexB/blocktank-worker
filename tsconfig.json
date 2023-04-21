@@ -12,6 +12,6 @@
       "removeComments": true,
       "experimentalDecorators": true
     },
-    "include": ["./src/**/*"],
+    "include": ["./src/**/*", "tests/JavaScriptCompatability.test.js"],
     "exclude": ["node_modules", "src/**/*.spec.ts", "src/**/*.test.ts"]
   }

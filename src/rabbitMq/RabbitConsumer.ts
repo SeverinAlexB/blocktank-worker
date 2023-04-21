@@ -15,7 +15,7 @@ export default class RabbitConsumer {
     public channel: amp.Channel
     public options: RabbitConsumerOptions
     public queueNames: string[] = []
-    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConsumerOptions> = {}) {
+    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConsumerOptions> = {}, public sourceExchangeName: string = 'blocktank.events') {
         this.options = Object.assign({}, defaultRabbitConsumerOptions, options)
     }
 
@@ -65,25 +65,16 @@ export default class RabbitConsumer {
      * @param options Define a backoff function in case of an error. Default: Exponential backoff.
      */
     async onMessage(sourceWorkerName: WorkerNameType, eventName: string, callback: (msg: RabbitEventMessage) => any, options: Partial<RabbitConsumeOptions> = {}) {
-        options = Object.assign({}, defaultRabbitConsumeOptions, options)
+        const opts: RabbitConsumeOptions = Object.assign({}, defaultRabbitConsumeOptions, options)
 
-        // Create exchange that subscribes to the event.
-        const sourceExchangeName = `blocktank.${sourceWorkerName}.events`
-        try {
-            await this.channel.checkExchange(sourceExchangeName) // Make sure the source exchange exists
-        } catch (e) {
-            throw new Error(`Exchange ${sourceExchangeName} does not exist. Make sure the source worker ${sourceWorkerName} is running.`, {
-                cause: e
-            })
-        }
-
+        await this.channel.assertExchange(this.sourceExchangeName, 'fanout') // Make sure the source exchange exists
         await this.channel.assertExchange(this.myExchangeName, 'x-delayed-message', { // Create a new exchange for this consumer that is able to delay messages
             autoDelete: true, // Delete this exchange if no queue is present anymore.
             arguments: {
                 'x-delayed-type': 'topic'
             }
         })
-        this.channel.bindExchange(this.myExchangeName, sourceExchangeName, '')
+        this.channel.bindExchange(this.myExchangeName, this.sourceExchangeName, '')
 
         // Create queue that subscribes only to the events we ask for.
         const routingKey = `${sourceWorkerName}.${eventName}`
@@ -114,7 +105,7 @@ export default class RabbitConsumer {
                 this.channel.ack(msg)
             } catch (e) {
                 // console.error(`Failed to process message ${msg.content.toString()}. Reschedule with delay.`, e)
-                const delayMs = options.backoffFunction(event.attempt)
+                const delayMs = opts.backoffFunction(event.attempt)
                 event.attempt++
                 msg.content = Buffer.from(event.toJson())
                 await this.requeueAfterError(msg, delayMs)

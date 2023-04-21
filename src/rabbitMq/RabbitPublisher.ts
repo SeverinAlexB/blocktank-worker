@@ -11,12 +11,8 @@ export default class RabbitPublisher {
     public connection: amp.Connection
     public channel: amp.Channel
     public options: RabbitConnectionOptions
-    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConnectionOptions> = {}) {
+    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConnectionOptions> = {}, public exchangeName: string = 'blocktank.events') {
         this.options = Object.assign({}, defaultRabbitConnectionOptions, options)
-    }
-
-    get exchangeName(): string {
-        return `blocktank.${this.myWorkerName}.events`
     }
 
     /**

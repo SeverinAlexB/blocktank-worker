@@ -30,7 +30,7 @@ export function defaultGrenacheServerConfig(): GrenacheServerConfig {
   return {
     grapeUrl: 'http://127.0.0.1:30001',
     port: Math.ceil(Math.random() * 55500 + 10000),
-    name: `worker:pinotNoir${Math.ceil(Math.random() * 1000000)}`,
+    name: `pinotNoir${Math.ceil(Math.random() * 1000000)}`,
     callbackSupport: false
   }
 }

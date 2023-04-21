@@ -47,7 +47,7 @@ class MyFirstWorkerImplementation extends WorkerImplementation {
      * Every worker also contains a GrenacheClient to call other worker methods.
      */
     async usdToBtc(usd: number) {
-        const exchangeRate = this.client.encapsulateWorker('worker:exchange_rate') // Get exchangeRate worker
+        const exchangeRate = this.client.encapsulateWorker('exchange_rate') // Get exchangeRate worker
         const btcUsd = await exchangeRate.getRate("BTCUSD") // Call method on exchangeRate worker.
         console.log('Current BTCUSD price is', btcUsd) 
         // Current BTCUSD price is $30,000
@@ -57,12 +57,10 @@ class MyFirstWorkerImplementation extends WorkerImplementation {
     /**
      * Subscribe to an event
      */
-    @SubscribeToBlocktankEvent('worker:lightning', 'invoicePaid')
+    @SubscribeToBlocktankEvent('lightning', 'invoicePaid')
     async onLightningInvoicePaidEvent(event: RabbitEventMessage) {
-        // This method will be called when `worker:lightning` emits a `invoicePaid` event.
+        // This method will be called when `lightning` emits a `invoicePaid` event.
         const eventData = event.content;
-        // To run this worker, you must ensure `worker:lightning` is running, otherwise this method will not be able 
-        // to subscribe to the events.
     }
 
     /**
@@ -70,12 +68,12 @@ class MyFirstWorkerImplementation extends WorkerImplementation {
      */
     async emitMyOwnEvent() {
         await this.runner.events.emitEvent('myEventName', { myData: 'myValue' })
-        // Use the decorator @SubscribeToBlocktankEvent('worker:MyFirstWorker', 'myEventName') to subscribe to this event.
+        // Use the decorator @SubscribeToBlocktankEvent('MyFirstWorker', 'myEventName') to subscribe to this event.
     }
 }
 
 const runner = new Worker(new MyFirstWorkerImplementation(), {
-    name: 'worker:MyFirstWorker', // Name of the worker. Must start with `worker:`.
+    name: 'MyFirstWorker', // Name of the worker.
     emitsEvents: true // If true, this worker will create the nessecary RabbitMQ objects and is able to emit events. Default: false
 })
 try {
@@ -104,7 +102,7 @@ try {
 
 * `worker`: *WorkerImplementation*
 * `config?` *GrenacheServerConfig*
-    * `name?` *string* Name of the worker. Announced on DHT. Used to name RabbitMQ queues. Must start with `worker:`. Default: Random name.
+    * `name?` *string* Name of the worker. Announced on DHT. Used to name RabbitMQ queues. Default: Random name.
     * `grapeUrl?` *string* URL to the grape DHT. Default: `http://127.0.0.1:30001`.
     * `port?` *integer* Server port. Default: Random port between 10,000 and 40,000.
     * `callbackSupport?` *boolean* Allows WorkerImplementation functions to be written with callbacks. Disables the method argument count check. Default: false
@@ -135,11 +133,11 @@ client.start()
 // Method 1 - Call function
 const method = 'helloWorld';
 const args = ['Sepp', 'Pirmin'];
-const response1 = await client.call('worker:MyFirstWorker', method, args)
+const response1 = await client.call('MyFirstWorker', method, args)
 console.log(response1) // Hello Sepp and Pirmin
 
 // Method 2 - EncapsulatedWorker
-const myFirstWorker = client.encapsulateWorker('worker:MyFirstWorker')
+const myFirstWorker = client.encapsulateWorker('MyFirstWorker')
 const response2 = await myFirstWorker.helloWorld('Sepp', 'Pirmin')
 console.log(response2) // Hello Sepp and Pirmin
 ```
@@ -167,7 +165,7 @@ console.log(response2) // Hello Sepp and Pirmin
 
 ```typescript
 // Example
-const myFirstWorker = client.encapsulateWorker('worker:MyFirstWorker')
+const myFirstWorker = client.encapsulateWorker('MyFirstWorker')
 const response = await myFirstWorker.helloWorld('Sepp')
 // Hello Sepp
 ```
@@ -185,9 +183,13 @@ class ListenerImplementation extends WorkerImplementation {
     }
 }
 
-// Subscribe to the event worker:lightning.invoicePaid. Calls ListenerImplementation.invoicePaidEvent.
-registerBlocktankEvent('worker:lightning', 'invoicePaid', ListenerImplementation, 'invoicePaidEvent')
+// Subscribe to the event `lightning.invoicePaid`. Calls ListenerImplementation.invoicePaidEvent.
+registerBlocktankEvent('lightning', 'invoicePaid', ListenerImplementation, 'invoicePaidEvent')
 ```
+
+## RabbitMQ / Events
+
+`RabbitPublisher` and `RabbitConsumer` manage all events around the worker. Checkout [RabbitMQ docs](./docs/rabbitMQ-events.drawio.png) to get an overview on the exchange/queue structure.
 
 ## Development
 

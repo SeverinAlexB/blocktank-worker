@@ -4,3 +4,5 @@ TODO
 data
 status
 dist
+*.dtmp
+.DS_Store

@@ -43,32 +43,23 @@ class MyFirstWorkerImplementation extends WorkerImplementation {
         return `Hello ${name1} and ${name2}`;
     }
 
-    /**
-     * Every worker also contains a GrenacheClient to call other worker methods.
-     */
-    async usdToBtc(usd: number) {
-        const exchangeRate = this.client.encapsulateWorker('exchange_rate') // Get exchangeRate worker
+    async callOtherWorkerUsdToBtc(usd: number) {
+        const exchangeRate = this.runner.gClient.encapsulateWorker('exchange_rate') // Get exchangeRate worker
         const btcUsd = await exchangeRate.getRate("BTCUSD") // Call method on exchangeRate worker.
         console.log('Current BTCUSD price is', btcUsd) 
         // Current BTCUSD price is $30,000
         return usd/btcUsd
     }
 
-    /**
-     * Subscribe to an event
-     */
     @SubscribeToBlocktankEvent('lightning', 'invoicePaid')
     async onLightningInvoicePaidEvent(event: RabbitEventMessage) {
-        // This method will be called when `lightning` emits a `invoicePaid` event.
+        // This method is called when `lightning` emits a `invoicePaid` event.
         const eventData = event.content;
     }
 
-    /**
-     * Publish my own events
-     */
     async emitMyOwnEvent() {
         await this.runner.events.emitEvent('myEventName', { myData: 'myValue' })
-        // Use the decorator @SubscribeToBlocktankEvent('MyFirstWorker', 'myEventName') to subscribe to this event.
+        // Decorator @SubscribeToBlocktankEvent('MyFirstWorker', 'myEventName') subscribes to this event.
     }
 }
 
@@ -166,8 +157,8 @@ console.log(response2) // Hello Sepp and Pirmin
 ```typescript
 // Example
 const myFirstWorker = client.encapsulateWorker('MyFirstWorker')
-const response = await myFirstWorker.helloWorld('Sepp')
-// Hello Sepp
+const response = await myFirstWorker.helloWorld('Sepp', 'Pirmin')
+// Hello Sepp and Pirmin
 ```
 
 ### Javascript support

@@ -35,7 +35,7 @@ A Worker consists of
 import { Worker, WorkerImplementation, waitOnSigint, RabbitEventMessage } from 'blocktank-worker';
 
 
-class MyFirstWorkerImplemetation extends WorkerImplementation {
+class MyFirstWorkerImplementation extends WorkerImplementation {
     /**
      * Every method defined in here can be called by other workers/clients.
      */
@@ -74,7 +74,7 @@ class MyFirstWorkerImplemetation extends WorkerImplementation {
     }
 }
 
-const runner = new Worker(new MyFirstWorkerImplemetation(), {
+const runner = new Worker(new MyFirstWorkerImplementation(), {
     name: 'worker:MyFirstWorker', // Name of the worker. Must start with `worker:`.
     emitsEvents: true // If true, this worker will create the nessecary RabbitMQ objects and is able to emit events. Default: false
 })

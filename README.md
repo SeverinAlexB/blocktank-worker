@@ -161,23 +161,6 @@ const response = await myFirstWorker.helloWorld('Sepp', 'Pirmin')
 // Hello Sepp and Pirmin
 ```
 
-### Javascript support
-
-Javascript doesnt support decorators ([yet](https://github.com/tc39/proposal-decorators)). To still subscribe to events, use `registerBlocktankEvent`.
-
-```javascript
-const {registerBlocktankEvent} = require('blocktank-worker');
-
-class ListenerImplementation extends WorkerImplementation {
-    async invoicePaidEvent(data) {
-        return true
-    }
-}
-
-// Subscribe to the event `lightning.invoicePaid`. Calls ListenerImplementation.invoicePaidEvent.
-registerBlocktankEvent('lightning', 'invoicePaid', ListenerImplementation, 'invoicePaidEvent')
-```
-
 ## RabbitMQ / Events
 
 `RabbitPublisher` and `RabbitConsumer` manage all events around the worker. 
@@ -197,6 +180,23 @@ async myMethod() {}
 ```
 
 Checkout [RabbitMQ docs](./docs/rabbitMQ-events.drawio.png) to get an overview on the exchange/queue structure.
+
+### Javascript support
+
+Javascript doesnt support decorators ([yet](https://github.com/tc39/proposal-decorators)). To still subscribe to events, use `registerBlocktankEvent`.
+
+```javascript
+const {registerBlocktankEvent} = require('blocktank-worker');
+
+class ListenerImplementation extends WorkerImplementation {
+    async invoicePaidEvent(data) {
+        return true
+    }
+}
+
+// Subscribe to the event `lightning.invoicePaid`. Calls ListenerImplementation.invoicePaidEvent.
+registerBlocktankEvent('lightning', 'invoicePaid', ListenerImplementation, 'invoicePaidEvent')
+```
 
 ## Development
 

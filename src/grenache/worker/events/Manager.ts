@@ -29,7 +29,7 @@ export class EventManager {
             if (this.worker.config.connection) {
                 this._rabbitMqConncetion = this.worker.config.connection
             } else {
-                this._rabbitMqConncetion = await amp.connect(this.worker.config.amqpUrl)
+                this._rabbitMqConncetion = await amp.connect(this.worker.config.amqpUrl!)
             }
         }
         return this._rabbitMqConncetion

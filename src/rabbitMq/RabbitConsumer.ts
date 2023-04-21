@@ -7,7 +7,7 @@ import { WorkerNameType } from '../grenache/WorkerNameType'
 
 /**
  * A RabbitMQ consumer that consumes events from another worker.
- * It creates a new exchange `blocktank.{myWorkerName}.consumers` for each worker + a queue `blocktank.{myWorkerName}.{eventName}` for each event.
+ * It creates a new exchange `{namespace}.{myWorkerName}.consumers` for each worker + a queue `{namespace}.{myWorkerName}.{sourceWorkerName}.{eventName}` for each event.
  * The exchange + queue will clean up automatically in case the consumer is stopped.
  */
 export default class RabbitConsumer {
@@ -15,27 +15,31 @@ export default class RabbitConsumer {
     public channel: amp.Channel
     public options: RabbitConsumerOptions
     public queueNames: string[] = []
-    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConsumerOptions> = {}, public sourceExchangeName: string = 'blocktank.events') {
+    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConsumerOptions> = {}) {
         this.options = Object.assign({}, defaultRabbitConsumerOptions, options)
     }
 
+    get sourceExchangeName(): string {
+        return `${this.options.namespace}.events`
+    }
+
     get myExchangeName(): string {
-        return `blocktank.${this.myWorkerName}.consumer`
+        return `${this.options.namespace}.${this.myWorkerName}.consumer`
     }
 
     get myQueueName(): string {
-        return `blocktank.${this.myWorkerName}`
+        return `${this.options.namespace}.${this.myWorkerName}`
     }
 
     /**
-     * Initialize connection. Creates exchange `blocktank.${this.myWorkerName}.consumers`: This exchange is used to delay messages if needed.
+     * Initialize connection. Creates exchange `{namespace}.${this.myWorkerName}.consumers`: This exchange is used to delay messages if needed.
      */
     async init() {
         if (this.options.connection) {
             this.connection = this.options.connection
         } else {
             this.connection = await amp.connect(
-                this.options.amqpUrl
+                this.options.amqpUrl!
             )
         }
         this.channel = await this.connection.createChannel()

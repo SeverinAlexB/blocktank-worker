@@ -4,26 +4,30 @@ import RabbitEventMessage from './RabbitEventMessage'
 import { WorkerNameType } from '../grenache/WorkerNameType'
 
 /**
- * A RabbitMQ publisher that publishes events to an exchange called `blocktank.{myWorkerName}.events.`
+ * A RabbitMQ publisher that publishes events to an exchange called `{namespace}.events.`
  * The exchange, once created is permanent and will not be deleted. In a production environment, you might want to clean up old exchanges.
  */
 export default class RabbitPublisher {
     public connection: amp.Connection
     public channel: amp.Channel
     public options: RabbitConnectionOptions
-    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConnectionOptions> = {}, public exchangeName: string = 'blocktank.events') {
+    constructor(public myWorkerName: WorkerNameType, options: Partial<RabbitConnectionOptions> = {}) {
         this.options = Object.assign({}, defaultRabbitConnectionOptions, options)
     }
 
+    get exchangeName(): string {
+        return `${this.options.namespace}.events`
+    }
+
     /**
-     * Setup connection and create exchange object `blocktank.${this.myWorkerName}.events` on RabbitMq.
+     * Setup connection and create exchange object `{namespace}.events` on RabbitMq.
      */
     async init() {
         if (this.options.connection) {
             this.connection = this.options.connection
         } else {
             this.connection = await amp.connect(
-                this.options.amqpUrl
+                this.options.amqpUrl!
             )
         }
         this.channel = await this.connection.createChannel()

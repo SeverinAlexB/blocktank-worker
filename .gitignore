@@ -4,5 +4,6 @@ TODO
 data
 status
 dist
-*.dtmp
+docs/**.drawio.dtmp
+docs/**.drawio.bkp
 .DS_Store

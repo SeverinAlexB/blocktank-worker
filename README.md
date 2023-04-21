@@ -196,9 +196,9 @@ Events work on a "at least once" delivery basis.
 ### Error backoff
 
 Each event can define a custom backoff function in case of an error. 
-Default: Exponential backoff, max 1 hr though:  `Math.min(1000 * Math.pow(2, attempt), _1hr)`
 
 ```typescript
+// Default: Math.min(1000 * Math.pow(2, attempt), _1hr)
 @SubscribeToBlocktankEvent('lightning', 'invoicePaid', {
     backoffFunction: (attempt) => attempt*1000 
 })

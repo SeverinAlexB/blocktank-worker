@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2023-04-21T07:21:01.832Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.1 Chrome/112.0.5615.87 Electron/24.1.2 Safari/537.36" etag="g1c860W6uuG8TEzp6Fki" version="21.2.1" type="device">
+<mxfile host="Electron" modified="2023-04-21T07:42:03.162Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.1 Chrome/112.0.5615.87 Electron/24.1.2 Safari/537.36" etag="epkyE4EtDh8aEtc6zmeq" version="21.2.1" type="device">
   <diagram name="Page-1" id="hG6ZjCvNAPdhJkc7tSRy">
     <mxGraphModel dx="2794" dy="742" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -159,7 +159,7 @@
         <mxCell id="sYY-K0hRYDt8o--p5X97-51" value="5. On error:&lt;br&gt;Events are&amp;nbsp;requeue with a delay. The event is placed behind all new incoming events to prevent infinite loops.&lt;br&gt;A different worker might pick up the event the next time." style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
           <mxGeometry x="-600" y="1120" width="220" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="sYY-K0hRYDt8o--p5X97-52" value="1. Workers create events and sends them to the main blocktank.events exchange." style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+        <mxCell id="sYY-K0hRYDt8o--p5X97-52" value="1. Workers create events and send them to the main blocktank.events exchange." style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
           <mxGeometry x="-640" y="280" width="220" height="100" as="geometry" />
         </mxCell>
         <mxCell id="sYY-K0hRYDt8o--p5X97-53" value="2. blocktank.instant.consumer subscribes to the events and only picks the one it is interested in." style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">

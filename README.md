@@ -61,7 +61,8 @@ class MyFirstWorkerImplemetation extends WorkerImplementation {
     async onLightningInvoicePaidEvent(event: RabbitEventMessage) {
         // This method will be called when `worker:lightning` emits a `invoicePaid` event.
         const eventData = event.content;
-        // To run this worker, you must ensure `worker:lightning` is running, otherwise this method will not be able to subscribe to the events.
+        // To run this worker, you must ensure `worker:lightning` is running, otherwise this method will not be able 
+        // to subscribe to the events.
     }
 
     /**
@@ -92,7 +93,7 @@ try {
     * If callback functions are used, initialize the Worker with `callbackSupport: true`.
 * Automatically returns `Error`s.
 * Able to emit and receive events.
-    * Methods that subscribe to an event and throw an error are retried in an exponential backoff manner.
+    * Events are automatically retried on error in an exponential backoff manner.
 
 **client** *GrenacheClient* to call other workers.
 
@@ -110,7 +111,7 @@ try {
     * `connection?` *amp.Connection* RabbitMQ connection. Mutually exclusive with `amqpUrl`.
     * `amqpUrl` *string* RabbitMQ connection URL. Mutually exclusive with `connection`. Default: `amqp://localhost:5672`.
     * `deleteInactiveQueueMs` *number* Time in ms after which inactive queues without consumers are deleted. Default: 1 week.
-    * `emitsEvents` *boolean* If true, this worker will create the nessecary RabbitMQ objects to emit events. Default: false
+    * `emitsEvents` *boolean* If true, this worker will create the necessary RabbitMQ objects to emit events. Default: false
 
 
 **async start()** Starts the worker. Listens on given port.
@@ -169,6 +170,23 @@ console.log(response2) // Hello Sepp and Pirmin
 const myFirstWorker = client.encapsulateWorker('worker:MyFirstWorker')
 const response = await myFirstWorker.helloWorld('Sepp')
 // Hello Sepp
+```
+
+### Javascript support
+
+Javascript doesnt support decorators ([yet](https://github.com/tc39/proposal-decorators)). To still subscribe to events, use `registerBlocktankEvent`.
+
+```javascript
+const {registerBlocktankEvent} = require('blocktank-worker');
+
+class ListenerImplementation extends WorkerImplementation {
+    async invoicePaidEvent(data) {
+        return true
+    }
+}
+
+// Subscribe to the event worker:lightning.invoicePaid. Calls ListenerImplementation.invoicePaidEvent.
+registerBlocktankEvent('worker:lightning', 'invoicePaid', ListenerImplementation, 'invoicePaidEvent')
 ```
 
 ## Development
